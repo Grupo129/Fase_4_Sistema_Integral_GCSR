@@ -144,7 +144,7 @@ class SistemaGUI:
             "Asesoria": AsesoriaEspecializada()
         }
 
-        # -------- REGISTRO CLIENTE --------
+        # -------- REGISTRO CLIENTE (JFM)--------
         tk.Label(root, text="ID Cliente").grid(row=0, column=0)
         self.id_entry = tk.Entry(root)
         self.id_entry.grid(row=0, column=1)
@@ -155,18 +155,18 @@ class SistemaGUI:
 
         tk.Button(root, text="Registrar Cliente", command=self.registrar_cliente).grid(row=2, column=0, columnspan=2)
 
-        # -------- SELECCIÓN CLIENTE --------
+        # -------- SELECCIÓN CLIENTE (JFM)--------
         tk.Label(root, text="Seleccionar Cliente").grid(row=3, column=0)
         self.cliente_var = tk.StringVar()
         self.menu_clientes = tk.OptionMenu(root, self.cliente_var, "")
         self.menu_clientes.grid(row=3, column=1)
 
-        # -------- SERVICIO --------
+        # -------- SERVICIO (JFM) --------
         tk.Label(root, text="Servicio").grid(row=4, column=0)
         self.servicio_var = tk.StringVar(value="Sala")
         tk.OptionMenu(root, self.servicio_var, *self.servicios.keys()).grid(row=4, column=1)
 
-        # -------- FECHAS --------
+        # -------- FECHAS (JFM)--------
         tk.Label(root, text="Inicio (YYYY-MM-DD)").grid(row=5, column=0)
         self.inicio_entry = tk.Entry(root)
         self.inicio_entry.grid(row=5, column=1)
@@ -175,12 +175,12 @@ class SistemaGUI:
         self.fin_entry = tk.Entry(root)
         self.fin_entry.grid(row=6, column=1)
 
-        # -------- BOTONES --------
+        # -------- BOTONES (JFM)--------
         tk.Button(root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
         tk.Button(root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=8, column=0, columnspan=2)
         tk.Button(root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
         
-        # -------- LISTA --------
+        # -------- LISTA (JFM)--------
         self.lista = tk.Listbox(root, width=60)
         self.lista.grid(row=9, column=0, columnspan=2)
 
