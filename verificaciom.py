@@ -1,10 +1,4 @@
-# Grupo_129.
-# Fase 4: Sistema Integral de Gestión de Clientes, Servicios y Reservas.
-# Ingeniería de Sistemas.
-# Autoría propia.
 print("Sistema Integral de Gestión de Clientes, Servicios y Reservas")
-
-
 # ============================================
 # IMPORTACIONES (EGC)
 # ============================================
@@ -129,7 +123,6 @@ class Reserva:
 # ============================================
 # REQUERIMIENTO R4
 # INTERFAZ TKINTER(JFM)
-# Se crea la interfaz de la ventana 
 # ============================================
 class SistemaGUI:
     def __init__(self, root):
@@ -145,79 +138,38 @@ class SistemaGUI:
             "Asesoria": AsesoriaEspecializada()
         }
 
-        # -------- REGISTRO CLIENTE (JFM)-------- 
-        
-        
-        # "Se crea la etiqueta para mostar donde se debe 
-        # ingresar el numero de identificacion del cliente: tk.Label , 
-        # al frente se crea el espacio donde se puede escribir el numero: tk.Entry "
-        
+        # -------- REGISTRO CLIENTE (JFM)--------
         tk.Label(root, text="ID Cliente").grid(row=0, column=0)
         self.id_entry = tk.Entry(root)
         self.id_entry.grid(row=0, column=1)
 
-
-     # "Se crea la etiqueta para mostar donde se debe 
-     # ingresar nombre del cliente: tk.Label  
-     # al frente se crea el espacio donde se puede escribir el nombre: tk.Entry"
-        
         tk.Label(root, text="Nombre").grid(row=1, column=0)
         self.nombre_entry = tk.Entry(root)
         self.nombre_entry.grid(row=1, column=1)
-        
-     #"Boton para registrar los datos ingresados"
-     
+
         tk.Button(root, text="Registrar Cliente", command=self.registrar_cliente).grid(row=2, column=0, columnspan=2)
 
         # -------- SELECCIÓN CLIENTE (JFM)--------
-        
-     # "Se crea la etiqueta para mostar donde seleccionar
-     # el cliente: tk.Label  
-     # al frente se crea el espacio donde queda el boton en forma 
-     # de lista para selecionar los clientes "
-        
         tk.Label(root, text="Seleccionar Cliente").grid(row=3, column=0)
         self.cliente_var = tk.StringVar()
         self.menu_clientes = tk.OptionMenu(root, self.cliente_var, "")
         self.menu_clientes.grid(row=3, column=1)
 
-
         # -------- SERVICIO (JFM) --------
-        
-     # "Se crea la etiqueta para mostar donde seleccionar
-     # el servicio: tk.Label  
-     # al frente se crea el espacio donde queda el boton en forma 
-     # de lista para selecionar los servicios "
-        
         tk.Label(root, text="Servicio").grid(row=4, column=0)
         self.servicio_var = tk.StringVar(value="Sala")
         tk.OptionMenu(root, self.servicio_var, *self.servicios.keys()).grid(row=4, column=1)
 
         # -------- FECHAS (JFM)--------
-        
-     # "Se crea la etiqueta para mostar donde ingresar
-     # la fecha de inicio: tk.Label  
-     # al frente se crea el espacio donde queda el espacio 
-     # para ingresar la fecha "
-     
         tk.Label(root, text="Inicio (YYYY-MM-DD)").grid(row=5, column=0)
         self.inicio_entry = tk.Entry(root)
         self.inicio_entry.grid(row=5, column=1)
 
-     # "Se crea la etiqueta para mostar donde ingresar
-     # la fecha de fin tk.Label  
-     # al frente se crea el espacio donde queda el espacio 
-     # para ingresar la fecha "
-     
         tk.Label(root, text="Fin").grid(row=6, column=0)
         self.fin_entry = tk.Entry(root)
         self.fin_entry.grid(row=6, column=1)
 
         # -------- BOTONES (JFM)--------
-        
-     # "Se crean los botones para 
-     # crear reseva, Cancelar Reserva y Salir
-    
         tk.Button(root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
         tk.Button(root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=8, column=0, columnspan=2)
         tk.Button(root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
@@ -225,9 +177,7 @@ class SistemaGUI:
         # -------- LISTA (JFM)--------
         self.lista = tk.Listbox(root, width=60)
         self.lista.grid(row=9, column=0, columnspan=2)
-
-   
-    # =========================
+ # =========================
     # FUNCIONES
     # =========================
     def registrar_cliente(self):
