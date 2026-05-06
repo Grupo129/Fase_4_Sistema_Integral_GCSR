@@ -526,38 +526,7 @@ class ReservasFrame(Reserva,tk.Frame):
         """Permite que el controlador del grupo recargue la lista de servicios."""
         self.servicios = servicios
         self._cmb_servicio["values"] = [str(s) for s in self.servicios]        
-#  CLASE DUMMY (solo para demo/prueba)
-#  El equipo reemplaza esto con su clase Reserva
-# ──────────────────────────────────────────────
-class Reservaconfi:
-    _contador = 1
- 
-    def __init__(self, cliente, servicio, fecha_inicio,
-                 fecha_fin, descuento=0.0):
-        self.id = Reservaconfi._contador
-        Reservaconfi._contador += 1
-        self.cliente = cliente
-        self.servicio = servicio
-        self.fecha_inicio = fecha_inicio
-        self.fecha_fin = fecha_fin
-        self.descuento = descuento
-        self.estado = "PENDIENTE"
- 
-    def confirmar(self):
-        self.estado = "CONFIRMADA"
- 
-    def __str__(self):
-        dias = (self.fecha_fin - self.fecha_inicio).days
-        desc_txt = f"{int(self.descuento*100)} %" if self.descuento else "Sin descuento"
-        return (
-            f"Reserva #{self.id}\n"
-            f"  Cliente  : {self.cliente}\n"
-            f"  Servicio : {self.servicio}\n"
-            f"  Inicio   : {self.fecha_inicio}\n"
-            f"  Fin      : {self.fecha_fin}  ({dias} día(s))\n"
-            f"  Descuento: {desc_txt}\n"
-            f"  Estado   : {self.estado}"
-        )        
+
 # =========================================================
 # Requerimiento 12 Logs
 # =========================================================
