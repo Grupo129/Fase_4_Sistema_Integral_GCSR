@@ -157,10 +157,15 @@ class SistemaGUI:
         self.clientes = []
         self.reservas = []
         self.servicios = {
-            "Sala": ReservaSala(),
-            "Equipos": AlquilerEquipos(),
-            "Asesoria": AsesoriaEspecializada()
-        }
+
+     "Escoge un servicio": None,
+
+     "Sala": ReservaSala(),
+
+     "Equipos": AlquilerEquipos(),
+
+     "Asesoria": AsesoriaEspecializada()
+     }
 
         # Aporto funcionalidad al requerimiento R3, para mejorar la
         # la visualización de la ventana del programa. (JHAR)
@@ -240,7 +245,9 @@ class SistemaGUI:
      # de lista para selecionar los servicios "
         
         tk.Label(self.root, text="Servicio").grid(row=4, column=0)
-        self.servicio_var = tk.StringVar(value="Sala")
+        self.servicio_var = tk.StringVar(
+     value="Escoge un servicio"
+      )
         tk.OptionMenu(self.root, self.servicio_var, *self.servicios.keys())\
         .grid(row=4, column=1, sticky="ew")
 
