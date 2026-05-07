@@ -14,6 +14,7 @@ import tkinter as tk
 from tkinter import messagebox
 # Importación para estilos personalizados.
 from tkinter import ttk
+import os
 
 # ============================================
 # LOGS DEL SISTEMA (EGC)
@@ -30,6 +31,16 @@ class Logger:
 # ============================================
 class IdentificacionInvalidaError(Exception):
     pass
+class ReservaError(Exception):
+    """Error base para operaciones de reserva."""
+class FechaInvalidaError(ReservaError):
+    """Fecha de inicio posterior o igual a fecha de fin."""
+class ClienteNoSeleccionadoError(ReservaError):
+    """No se seleccionó un cliente."""
+class ServicioNoSeleccionadoError(ReservaError):
+    """No se seleccionó un servicio."""
+class DescuentoInvalidoError(ReservaError):
+    """Combinación de descuento inválida."""
 
 # ============================================
 # CLASE ABSTRACTA SERVICIO (EGC)
@@ -201,7 +212,8 @@ class SistemaGUI:
         
         tk.Label(self.root, text="Nombre").grid(row=1, column=0)
         self.nombre_entry = tk.Entry(self.root)
-        self.nombre_entry.grid(row=1, column=1)
+        self.nombre_entry.grid(row=1, column=1, sticky="ew")
+
         
      #"Boton para registrar los datos ingresados"
      
@@ -229,7 +241,8 @@ class SistemaGUI:
         
         tk.Label(self.root, text="Servicio").grid(row=4, column=0)
         self.servicio_var = tk.StringVar(value="Sala")
-        tk.OptionMenu(self.root, self.servicio_var, *self.servicios.keys()).grid(row=4, column=1)
+        tk.OptionMenu(self.root, self.servicio_var, *self.servicios.keys())\
+        .grid(row=4, column=1, sticky="ew")
 
         # -------- FECHAS (JFM)--------
         
@@ -238,29 +251,50 @@ class SistemaGUI:
      # al frente se crea el espacio donde queda el espacio 
      # para ingresar la fecha "
      
-        tk.Label(self.root, text="Inicio (YYYY-MM-DD)").grid(row=5, column=0)
+        tk.Label(self.root, text="Inicio (YYYY-MM-DD)").grid(row=5, column=0, sticky="e", padx=4)
         self.inicio_entry = tk.Entry(self.root)
-        self.inicio_entry.grid(row=5, column=1)
-
+        self.inicio_entry.grid(row=5, column=1, sticky="ew")
+    
      # "Se crea la etiqueta para mostar donde ingresar
      # la fecha de fin tk.Label  
      # al frente se crea el espacio donde queda el espacio 
      # para ingresar la fecha "
      
-        tk.Label(self.root, text="Fin").grid(row=6, column=0)
+        tk.Label(self.root, text="Fin (YYYY-MM-DD)").grid(row=6, column=0, sticky="e", padx=4)
         self.fin_entry = tk.Entry(self.root)
-        self.fin_entry.grid(row=6, column=1)
+        self.fin_entry.grid(row=6, column=1, sticky="ew")
 
+# -------- SECCIÓN 5: VISTA PREVIA --------
+        ttk.Label(self.root, text="Vista previa:").grid(row=8, column=0, sticky="nw", padx=4)
+        self.preview = tk.Text(self.root, height=5, width=40)
+        self.preview.grid(row=8, column=1, columnspan=3, pady=4)
         # -------- BOTONES (JFM)--------
-        
+        # -------- SECCIÓN 4: DESCUENTOS --------
+        self.descuento_habilitado = tk.BooleanVar()
+        ttk.Checkbutton(self.root, text="Aplicar descuento", variable=self.descuento_habilitado)\
+    .grid(row=7, column=0, sticky="w", padx=4)
+
+        self.desc_5  = tk.BooleanVar()
+        self.desc_10 = tk.BooleanVar()
+        self.desc_15 = tk.BooleanVar()
+        ttk.Checkbutton(self.root, text="5%",  variable=self.desc_5) .grid(row=7, column=1)
+        ttk.Checkbutton(self.root, text="10%", variable=self.desc_10).grid(row=7, column=2)
+        ttk.Checkbutton(self.root, text="15%", variable=self.desc_15).grid(row=7, column=3)
+
      # "Se crean los botones para 
-     # crear reseva, Cancelar Reserva y Salir
-    
+     # crear reseva, Cancelar Reserva , mostrar  logs, limpiar campos y Salir
         tk.Button(self.root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
         # Modificó está línea para redistribuir la interfaz
         # mejorando su presentación. (JHAR)
-        tk.Button(self.root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
+        tk.Button(self.root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=9, column=2, columnspan=2, sticky="ew", padx=2)
+       
+        tk.Button(self.root, text="Limpiar",  command=self.limpiar)      .grid(row=10, column=0, sticky="ew", padx=2)
+        tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs) .grid(row=10, column=1, sticky="ew", padx=2)
+        # -------- SECCIÓN 7: LISTA DE RESERVAS (JFM) --------
+        self.lista = tk.Listbox(self.root, width=60)
+        self.lista.grid(row=11, column=0, columnspan=4, pady=(6, 4))
         
+        tk.Button(self.root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
     # ===================================================
     # REQUERIMIENTO R6
     # Diseñar sección de visualización de reservas (JHAR)
@@ -358,10 +392,33 @@ class SistemaGUI:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
     
-    
+    def obtener_descuento(self):
+
+        # Si no está activado el descuento, retorna 0%
+        if not self.descuento_habilitado.get():
+            return 0
+
+        # Verifica qué checkbox está activo
+        if self.desc_5.get():
+            return 5
+        if self.desc_10.get():
+            return 10
+        if self.desc_15.get():
+            return 15
+
+        return 0
     # Función para ver detalle completo de la reserva. (JHAR)
     def ver_reserva(self):
-        pass
+       self.preview.delete("1.0", tk.END)
+
+       texto = f"""
+Cliente: {self.cliente_var.get()}
+Servicio: {self.servicio_var.get()}
+Inicio: {self.inicio_entry.get()}
+Fin: {self.fin_entry.get()}
+Descuento: {self.obtener_descuento()}%
+"""
+       self.preview.insert(tk.END, texto)
     
     def cancelar_reserva(self):
         try:
@@ -382,7 +439,64 @@ class SistemaGUI:
         except Exception as e:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
+    def validar_fechas(self):
+        try:
+            # Construimos fechas reales
+            inicio = datetime.date(2025, int(self.inicio_entry.get()))
+            fin = datetime.date(2025, int(self.fin_entry.get()))
 
+            # Validación lógica
+            if fin <= inicio:
+                raise ValueError("La fecha final debe ser mayor a la inicial")
+
+            return inicio, fin
+
+        except Exception as e:
+            # Encadenamiento de error
+            raise ValueError("Error en fechas: " + str(e))
+
+
+    # Limpia todos los campos
+    def limpiar(self):
+        self.id_entry.delete(0, tk.END)
+        self.nombre_entry.delete(0, tk.END)
+        self.servicio_var.set("")
+        self.inicio_entry.delete(0, tk.END)
+        self.fin_entry.delete(0, tk.END)
+        self.descuento_habilitado.set(False)
+        self.desc_5.set(False)
+        self.desc_10.set(False)
+        self.desc_15.set(False)
+        self.preview.delete("1.0", tk.END)
+
+
+    # Muestra los logs del sistema
+    def mostrar_logs(self):
+     if not os.path.exists("logs.txt"):
+        messagebox.showinfo("Logs", "No hay registros de errores.")
+        return
+
+     with open("logs.txt", "r") as archivo:
+        contenido = archivo.read().strip()
+
+     if not contenido:
+        messagebox.showinfo("Logs", "No hay registros de errores.")
+        return
+
+    # Ventana emergente con los logs
+     ventana = tk.Toplevel(self.root)
+     ventana.title("Registros del sistema")
+     ventana.geometry("600x400")
+ 
+     texto = tk.Text(ventana, wrap="word", state="normal")
+     texto.insert("1.0", contenido)
+     texto.config(state="disabled")  # solo lectura
+
+     scroll = tk.Scrollbar(ventana, command=texto.yview)
+     texto.config(yscrollcommand=scroll.set)
+
+     texto.pack(side="left", fill="both", expand=True)
+     scroll.pack(side="right", fill="y")
     def salir(self):
         Logger.registrar("Sistema cerrado")
         self.root.destroy()
