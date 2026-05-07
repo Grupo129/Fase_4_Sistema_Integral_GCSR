@@ -12,6 +12,8 @@ from abc import ABC, abstractmethod
 import datetime
 import tkinter as tk
 from tkinter import messagebox
+# Importación para estilos personalizados.
+from tkinter import ttk
 
 # ============================================
 # LOGS DEL SISTEMA (EGC)
@@ -132,28 +134,64 @@ class Reserva:
 # Se crea la interfaz de la ventana 
 # ============================================
 class SistemaGUI:
-    def __init__(self, root):
-        self.root = root
+    
+    # Por buenas prácticas se realiza actualizaciones:
+    # a) en la forma como inicializa la clase SistemaGUI
+    # y b) se actualiza las referencias de root a 
+    # sel.root en todo el código. (JHAR)
+    def __init__(self):
+        self.root = tk.Tk()
         self.root.title("Software FJ")
 
         self.clientes = []
         self.reservas = []
-
         self.servicios = {
             "Sala": ReservaSala(),
             "Equipos": AlquilerEquipos(),
             "Asesoria": AsesoriaEspecializada()
         }
 
-        # -------- REGISTRO CLIENTE (JFM)-------- 
+        # Aporto funcionalidad al requerimiento R3, para mejorar la
+        # la visualización de la ventana del programa. (JHAR)
+        self.centrar_ventana(self.root, 566, 500)
         
+        self.root.mainloop()
+
+    # ------- Funcionalidad para centrar la ventana (JHAR) -------
+    
+    def centrar_ventana(self, ventana, ancho, alto):
+        
+        # Variables para obtener el ancho y el alto de la pantalla.
+        ancho_dispositivo = ventana.winfo_screenwidth()
+        alto_dispositivo = ventana.winfo_screenheight()
+        
+        # Calculos para centrar la ventana.
+        posicion_x = round((ancho_dispositivo - ancho) / 2)
+        posicion_y = round((alto_dispositivo - alto) / 2)
+        
+        # Le indico a Python como centar la ventana.
+        ventana.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
+    
+        # -------- Sección de personalización para R6 (JHAR) --------
+        
+        # Este estilo ayuda a no saturar el código
+        # de la etiqueta del título de R6.
+        estilo_interfaz = ttk.Style()
+        estilo_interfaz.theme_use('clam')
+    
+        estilo_interfaz.configure('Titulo.TLabel',
+                                  background='#1d2d44',
+                                  foreground='white',
+                                  font=('Tahoma', 11, 'bold'))
+
+        # -------- REGISTRO CLIENTE (JFM)--------
         
         # "Se crea la etiqueta para mostar donde se debe 
         # ingresar el numero de identificacion del cliente: tk.Label , 
         # al frente se crea el espacio donde se puede escribir el numero: tk.Entry "
         
-        tk.Label(root, text="ID Cliente").grid(row=0, column=0)
-        self.id_entry = tk.Entry(root)
+        tk.Label(self.root, text="ID Cliente").grid(row=0, column=0)
+        self.id_entry = tk.Entry(self.root)
         self.id_entry.grid(row=0, column=1)
 
 
@@ -161,13 +199,13 @@ class SistemaGUI:
      # ingresar nombre del cliente: tk.Label  
      # al frente se crea el espacio donde se puede escribir el nombre: tk.Entry"
         
-        tk.Label(root, text="Nombre").grid(row=1, column=0)
-        self.nombre_entry = tk.Entry(root)
+        tk.Label(self.root, text="Nombre").grid(row=1, column=0)
+        self.nombre_entry = tk.Entry(self.root)
         self.nombre_entry.grid(row=1, column=1)
         
      #"Boton para registrar los datos ingresados"
      
-        tk.Button(root, text="Registrar Cliente", command=self.registrar_cliente).grid(row=2, column=0, columnspan=2)
+        tk.Button(self.root, text="Registrar Cliente", command=self.registrar_cliente).grid(row=2, column=0, columnspan=2)
 
         # -------- SELECCIÓN CLIENTE (JFM)--------
         
@@ -176,9 +214,9 @@ class SistemaGUI:
      # al frente se crea el espacio donde queda el boton en forma 
      # de lista para selecionar los clientes "
         
-        tk.Label(root, text="Seleccionar Cliente").grid(row=3, column=0)
+        tk.Label(self.root, text="Seleccionar Cliente").grid(row=3, column=0)
         self.cliente_var = tk.StringVar()
-        self.menu_clientes = tk.OptionMenu(root, self.cliente_var, "")
+        self.menu_clientes = tk.OptionMenu(self.root, self.cliente_var, "")
         self.menu_clientes.grid(row=3, column=1)
 
 
@@ -189,9 +227,9 @@ class SistemaGUI:
      # al frente se crea el espacio donde queda el boton en forma 
      # de lista para selecionar los servicios "
         
-        tk.Label(root, text="Servicio").grid(row=4, column=0)
+        tk.Label(self.root, text="Servicio").grid(row=4, column=0)
         self.servicio_var = tk.StringVar(value="Sala")
-        tk.OptionMenu(root, self.servicio_var, *self.servicios.keys()).grid(row=4, column=1)
+        tk.OptionMenu(self.root, self.servicio_var, *self.servicios.keys()).grid(row=4, column=1)
 
         # -------- FECHAS (JFM)--------
         
@@ -200,8 +238,8 @@ class SistemaGUI:
      # al frente se crea el espacio donde queda el espacio 
      # para ingresar la fecha "
      
-        tk.Label(root, text="Inicio (YYYY-MM-DD)").grid(row=5, column=0)
-        self.inicio_entry = tk.Entry(root)
+        tk.Label(self.root, text="Inicio (YYYY-MM-DD)").grid(row=5, column=0)
+        self.inicio_entry = tk.Entry(self.root)
         self.inicio_entry.grid(row=5, column=1)
 
      # "Se crea la etiqueta para mostar donde ingresar
@@ -209,8 +247,8 @@ class SistemaGUI:
      # al frente se crea el espacio donde queda el espacio 
      # para ingresar la fecha "
      
-        tk.Label(root, text="Fin").grid(row=6, column=0)
-        self.fin_entry = tk.Entry(root)
+        tk.Label(self.root, text="Fin").grid(row=6, column=0)
+        self.fin_entry = tk.Entry(self.root)
         self.fin_entry.grid(row=6, column=1)
 
         # -------- BOTONES (JFM)--------
@@ -218,13 +256,54 @@ class SistemaGUI:
      # "Se crean los botones para 
      # crear reseva, Cancelar Reserva y Salir
     
-        tk.Button(root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
-        tk.Button(root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=8, column=0, columnspan=2)
-        tk.Button(root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
+        tk.Button(self.root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
+        # Modificó está línea para redistribuir la interfaz
+        # mejorando su presentación. (JHAR)
+        tk.Button(self.root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
         
-        # -------- LISTA (JFM)--------
-        self.lista = tk.Listbox(root, width=60)
-        self.lista.grid(row=9, column=0, columnspan=2)
+    # ===================================================
+    # REQUERIMIENTO R6
+    # Diseñar sección de visualización de reservas (JHAR)
+    # Se crea la sección según las necesidades del
+    # programa según las necesidades actuales.
+    # ===================================================
+        
+    # Contenedor que desplegará la sección de las reservas
+    # creadas. (JHAR)
+        cont_reservas_creadas = tk.Frame(self.root, background="#8CB7E2")
+        cont_reservas_creadas.columnconfigure(0, weight=6)
+        cont_reservas_creadas.columnconfigure(1, weight=1)
+        cont_reservas_creadas.rowconfigure(1, weight=1)
+        cont_reservas_creadas.grid(row=9, column=0, columnspan=3, padx=20, pady=15, sticky='nsew')
+        
+    # Etiqueta para el título de R6. (JHAR)   
+        tit_reservas_contratadas = ttk.Label(cont_reservas_creadas,
+                                      text='Reservas Contratadas',
+                                      style='Titulo.TLabel',
+                                      anchor='center',
+                                      padding=10)
+        tit_reservas_contratadas.grid(row=0, column=0, columnspan=2, sticky='we')
+        
+        # -------- LISTA DE RESERVAS y CONTROLES (JFM-JHAR) --------
+        self.lista = tk.Listbox(cont_reservas_creadas, width=60)
+        self.lista.grid(row=1, column=0, padx=10, pady=10)
+        
+        cont_botones = tk.Frame(cont_reservas_creadas, background="#8CB7E2")
+        cont_botones.rowconfigure(0, weight=1)
+        cont_botones.rowconfigure(1, weight=1)
+        cont_botones.rowconfigure(2, weight=1)
+        cont_botones.rowconfigure(3, weight=1)
+        cont_botones.columnconfigure(1, weight=1)
+        cont_botones.grid(row=1, column=1, padx=10, pady=10, sticky='n')
+        
+        # Agrego el botón de ver detalle de la reserva. (JHAR)
+        bot_ver_reserva = tk.Button(cont_botones, text="Ver Reserva", command=self.ver_reserva)
+        bot_ver_reserva.grid(row=0, column=1, padx=10, pady=10, sticky='we')
+        
+        
+        # Se actualiza donde se muestra el botón cancelar
+        # reserva. (JHAR)
+        tk.Button(cont_botones, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=1, column=1, padx=10, pady=10, sticky='we')
 
    
     # =========================
@@ -278,7 +357,12 @@ class SistemaGUI:
         except Exception as e:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
-
+    
+    
+    # Función para ver detalle completo de la reserva. (JHAR)
+    def ver_reserva(self):
+        pass
+    
     def cancelar_reserva(self):
         try:
             seleccion = self.lista.curselection()
@@ -304,10 +388,8 @@ class SistemaGUI:
         self.root.destroy()
 
 # ============================================
-# MAIN
+# Inicialización de programa (JFM - JHAR)
 # ============================================
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = SistemaGUI(root)
-    root.mainloop()
+    SistemaGUI()
         
