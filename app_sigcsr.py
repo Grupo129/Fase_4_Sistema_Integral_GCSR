@@ -111,8 +111,11 @@ class Cliente:
 # CLASE RESERVA  (JFM)
 # ============================================
 class Reserva:
+    _contador = 0 
     def __init__(self, cliente, servicio, inicio, fin):
-        try:
+       try:
+            Reserva._contador += 1         
+            self.id = Reserva._contador 
             self.cliente = cliente
             self.servicio = servicio
 
@@ -127,12 +130,12 @@ class Reserva:
 
             Logger.registrar(f"Reserva creada para {cliente.get_nombre()}")
 
-        except Exception as e:
+       except Exception as e:
             Logger.registrar(f"Error en reserva: {e}")
             raise
 
     def calcular(self):
-        dias = (self.fin - self.inicio).days + 1
+        dias = (self.fin - self.inicio).days
         return self.servicio.calcular_costo(dias)
 
     def cancelar(self):
@@ -277,7 +280,7 @@ class SistemaGUI:
         self.descuento_habilitado = tk.BooleanVar()
         ttk.Checkbutton(self.root, text="Aplicar descuento", variable=self.descuento_habilitado)\
     .grid(row=7, column=0, sticky="w", padx=4)
-
+#se crea las casilla selecion de cada descuento a obtener
         self.desc_5  = tk.BooleanVar()
         self.desc_10 = tk.BooleanVar()
         self.desc_15 = tk.BooleanVar()
@@ -290,8 +293,7 @@ class SistemaGUI:
         tk.Button(self.root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
         # Modificó está línea para redistribuir la interfaz
         # mejorando su presentación. (JFM - JHAR)
-        tk.Button(self.root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=9, column=2, columnspan=2, sticky="ew", padx=2)
-       
+     
         tk.Button(self.root, text="Limpiar",  command=self.limpiar).grid(row=10, column=0, sticky="ew", padx=2)
         tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs).grid(row=10, column=1, sticky="ew", padx=2)
         # -------- SECCIÓN 7: LISTA DE RESERVAS (JFM) --------
@@ -362,10 +364,14 @@ class SistemaGUI:
                                  command=lambda value=c.get_nombre(): self.cliente_var.set(value))
 
             messagebox.showinfo("OK", "Cliente registrado")
+            self.id_entry.delete(0, tk.END)
+            self.nombre_entry.delete(0, tk.END)
 
         except Exception as e:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
+            self.id_entry.delete(0, tk.END)
+            self.nombre_entry.delete(0, tk.END)
 
     def obtener_cliente(self):
         nombre = self.cliente_var.get()
@@ -384,20 +390,15 @@ class SistemaGUI:
                 servicio,
                 self.inicio_entry.get(),
                 self.fin_entry.get()
-            
             )
-            
-            #Se activa la funcion de descuentos 
+   #Se activa la funcion de descuentos 
             descuento = self.obtener_descuento()
 
             if descuento > 0:
               reserva.costo = reserva.costo - (reserva.costo * descuento / 100)
             
-            
-               
-               
-               
             self.reservas.append(reserva)
+            
 
             self.lista.insert(tk.END,
                 f"{cliente.get_nombre()} - {servicio.nombre} - ${reserva.costo} - {reserva.estado}"
@@ -428,15 +429,33 @@ class SistemaGUI:
     def ver_reserva(self):
        self.preview.delete("1.0", tk.END)
        
-       # Se usa textwrap para mejorar la presentación
-       # y con esto se corrige la identación. (JHAR)
+    # Busca por índice seleccionado en la lista — así siempre coincide
+       seleccion = self.lista.curselection()
+       if not seleccion:
+         self.preview.insert(tk.END, "⚠ Seleccione una reserva de la lista primero.")
+         return
+
+       i = seleccion[0]
+       reserva_encontrada = self.reservas[i]
+#se obtiene el valor del descuento, ademas costo total con descuentos y cantidad de dias 
+       descuento = self.obtener_descuento()
+       costo_original = reserva_encontrada.costo
+       costo_con_descuento = costo_original * (1 - descuento / 100)
+       duracion_dias = (reserva_encontrada.fin - reserva_encontrada.inicio).days
+#se muestra en pantalla la informacion completa de la reserva
        texto = textwrap.dedent(f"""
-                Cliente: {self.cliente_var.get()}
-                Servicio: {self.servicio_var.get()}
-                Inicio: {self.inicio_entry.get()}
-                Fin: {self.fin_entry.get()}
-                Descuento: {self.obtener_descuento()}%
-                """)
+          ID Reserva:          #{reserva_encontrada.id}
+          Cliente:             {reserva_encontrada.cliente.get_nombre()}
+         Servicio:            {reserva_encontrada.servicio.nombre}
+         Inicio:              {reserva_encontrada.inicio.strftime("%Y-%m-%d")}
+         Fin:                 {reserva_encontrada.fin.strftime("%Y-%m-%d")}
+         Duración:            {duracion_dias} día(s)
+          Descuento:           {descuento}%
+         Costo original:      ${costo_original:.2f}
+         Costo con descuento: ${costo_con_descuento:.2f}
+         Estado:              {reserva_encontrada.estado}
+    """)
+       
        self.preview.insert(tk.END, texto)
     
     def cancelar_reserva(self):
@@ -477,8 +496,7 @@ class SistemaGUI:
 
     # Limpia todos los campos
     def limpiar(self):
-        self.id_entry.delete(0, tk.END)
-        self.nombre_entry.delete(0, tk.END)
+        self.cliente_var.set("")
         self.servicio_var.set("")
         self.inicio_entry.delete(0, tk.END)
         self.fin_entry.delete(0, tk.END)
