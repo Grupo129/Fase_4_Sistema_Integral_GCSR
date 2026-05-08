@@ -387,7 +387,7 @@ class SistemaGUI:
             
             )
             
-            
+            #Se activa la funcion de descuentos 
             descuento = self.obtener_descuento()
 
             if descuento > 0:
