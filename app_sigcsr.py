@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 import datetime
 import tkinter as tk
 from tkinter import messagebox
+import textwrap
 # Importación para estilos personalizados.
 from tkinter import ttk
 import os
@@ -115,8 +116,11 @@ class Cliente:
 # CLASE RESERVA  (JFM)
 # ============================================
 class Reserva:
+    _contador = 0 
     def __init__(self, cliente, servicio, inicio, fin):
-        try:
+       try:
+            Reserva._contador += 1         
+            self.id = Reserva._contador 
             self.cliente = cliente
             self.servicio = servicio
 
@@ -131,7 +135,7 @@ class Reserva:
 
             Logger.registrar(f"Reserva creada para {cliente.get_nombre()}")
 
-        except Exception as e:
+       except Exception as e:
             Logger.registrar(f"Error en reserva: {e}")
             raise
 
@@ -281,7 +285,7 @@ class SistemaGUI:
         self.descuento_habilitado = tk.BooleanVar()
         ttk.Checkbutton(self.root, text="Aplicar descuento", variable=self.descuento_habilitado)\
     .grid(row=7, column=0, sticky="w", padx=4)
-
+#se crea las casilla selecion de cada descuento a obtener
         self.desc_5  = tk.BooleanVar()
         self.desc_10 = tk.BooleanVar()
         self.desc_15 = tk.BooleanVar()
@@ -294,8 +298,7 @@ class SistemaGUI:
         tk.Button(self.root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
         # Modificó está línea para redistribuir la interfaz
         # mejorando su presentación. (JHAR)
-        tk.Button(self.root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=9, column=2, columnspan=2, sticky="ew", padx=2)
-       
+     
         tk.Button(self.root, text="Limpiar",  command=self.limpiar)      .grid(row=10, column=0, sticky="ew", padx=2)
         tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs) .grid(row=10, column=1, sticky="ew", padx=2)
         # -------- SECCIÓN 7: LISTA DE RESERVAS (JFM) --------
@@ -364,10 +367,14 @@ class SistemaGUI:
                                  command=lambda value=c.get_nombre(): self.cliente_var.set(value))
 
             messagebox.showinfo("OK", "Cliente registrado")
+            self.id_entry.delete(0, tk.END)
+            self.nombre_entry.delete(0, tk.END)
 
         except Exception as e:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
+            self.id_entry.delete(0, tk.END)
+            self.nombre_entry.delete(0, tk.END)
 
     def obtener_cliente(self):
         nombre = self.cliente_var.get()
@@ -391,8 +398,14 @@ class SistemaGUI:
                 self.inicio_entry.get(),
                 self.fin_entry.get()
             )
+   #Se activa la funcion de descuentos 
+            descuento = self.obtener_descuento()
 
+            if descuento > 0:
+              reserva.costo = reserva.costo - (reserva.costo * descuento / 100)
+            
             self.reservas.append(reserva)
+            
 
             self.lista.insert(tk.END,
                 f"{cliente.get_nombre()} - {servicio.nombre} - ${reserva.costo} - {reserva.estado}"
@@ -422,14 +435,16 @@ class SistemaGUI:
     # Función para ver detalle completo de la reserva. (JHAR)
     def ver_reserva(self):
        self.preview.delete("1.0", tk.END)
-
-       texto = f"""
-Cliente: {self.cliente_var.get()}
-Servicio: {self.servicio_var.get()}
-Inicio: {self.inicio_entry.get()}
-Fin: {self.fin_entry.get()}
-Descuento: {self.obtener_descuento()}%
-"""
+       
+       # Se usa textwrap para mejorar la presentación
+       # y con esto se corrige la identación. (JHAR)
+       texto = textwrap.dedent(f"""
+                Cliente: {self.cliente_var.get()}
+                Servicio: {self.servicio_var.get()}
+                Inicio: {self.inicio_entry.get()}
+                Fin: {self.fin_entry.get()}
+                Descuento: {self.obtener_descuento()}%
+                """)
        self.preview.insert(tk.END, texto)
     
     def cancelar_reserva(self):
@@ -470,7 +485,6 @@ Descuento: {self.obtener_descuento()}%
 
     # Limpia todos los campos
     def limpiar(self):
-
         self.id_entry.delete(0, tk.END)
         self.nombre_entry.delete(0, tk.END)
         self.servicio_var.set("")
