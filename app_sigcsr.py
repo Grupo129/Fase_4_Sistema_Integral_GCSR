@@ -12,11 +12,8 @@ from abc import ABC, abstractmethod
 import datetime
 import tkinter as tk
 from tkinter import messagebox
-# Importación para estilos personalizados. (JHAR)
+# Importación para estilos personalizados.
 from tkinter import ttk
-# Textwrap ayuda a mejorar la presentación del
-# texto en el mensaje informativo de ver_reserva. (JHAR)
-import textwrap
 import os
 
 # ============================================
@@ -32,6 +29,7 @@ class Logger:
 # ============================================
 # EXCEPCIÓN PERSONALIZADA (EGC) 
 # ============================================
+
 class IdentificacionInvalidaError(Exception):
     pass
 class ReservaError(Exception):
@@ -44,6 +42,12 @@ class ServicioNoSeleccionadoError(ReservaError):
     """No se seleccionó un servicio."""
 class DescuentoInvalidoError(ReservaError):
     """Combinación de descuento inválida."""
+
+# INICIO REQUERIMIENTO R9 (YTVCH)
+class ServicioNoSeleccionadoError(ReservaError):
+    """Error lanzado cuando el servicio está vacío en el R2 (YTVCH)"""
+    pass
+# FIN REQUERIMIENTO R9 (YTVCH)
 
 # ============================================
 # CLASE ABSTRACTA SERVICIO (EGC)
@@ -58,7 +62,7 @@ class Servicio(ABC):
         pass
 
 # ============================================
-# SERVICIOS (POLIMORFISMO) (EGC)
+# SERVICIOS (POLIMORFISMO) (EGC
 # ============================================
 class ReservaSala(Servicio):
     def __init__(self):
@@ -160,7 +164,6 @@ class SistemaGUI:
         self.clientes = []
         self.reservas = []
         self.servicios = {
-            "Escoge un servicio": None,
             "Sala": ReservaSala(),
             "Equipos": AlquilerEquipos(),
             "Asesoria": AsesoriaEspecializada()
@@ -168,7 +171,7 @@ class SistemaGUI:
 
         # Aporto funcionalidad al requerimiento R3, para mejorar la
         # la visualización de la ventana del programa. (JHAR)
-        self.centrar_ventana(self.root, 566, 800)
+        self.centrar_ventana(self.root, 566, 500)
         
         self.root.mainloop()
 
@@ -176,21 +179,21 @@ class SistemaGUI:
     
     def centrar_ventana(self, ventana, ancho, alto):
         
-        # Variables para obtener el ancho y el alto de la pantalla. (JHAR)
+        # Variables para obtener el ancho y el alto de la pantalla.
         ancho_dispositivo = ventana.winfo_screenwidth()
         alto_dispositivo = ventana.winfo_screenheight()
         
-        # Calculos para centrar la ventana. (JHAR)
+        # Calculos para centrar la ventana.
         posicion_x = round((ancho_dispositivo - ancho) / 2)
         posicion_y = round((alto_dispositivo - alto) / 2)
         
-        # Le indico a Python como centar la ventana. (JHAR)
+        # Le indico a Python como centar la ventana.
         ventana.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
     
         # -------- Sección de personalización para R6 (JHAR) --------
         
         # Este estilo ayuda a no saturar el código
-        # de la etiqueta del título de R6. (JHAR)
+        # de la etiqueta del título de R6.
         estilo_interfaz = ttk.Style()
         estilo_interfaz.theme_use('clam')
     
@@ -235,6 +238,7 @@ class SistemaGUI:
         self.menu_clientes = tk.OptionMenu(self.root, self.cliente_var, "")
         self.menu_clientes.grid(row=3, column=1)
 
+        self.cliente_var.trace("w", self.validar_estado_seleccion) # (YTVCH)
 
         # -------- SERVICIO (JFM) --------
         
@@ -244,7 +248,7 @@ class SistemaGUI:
      # de lista para selecionar los servicios "
         
         tk.Label(self.root, text="Servicio").grid(row=4, column=0)
-        self.servicio_var = tk.StringVar(value="Escoge un servicio")
+        self.servicio_var = tk.StringVar(value="Sala")
         tk.OptionMenu(self.root, self.servicio_var, *self.servicios.keys())\
         .grid(row=4, column=1, sticky="ew")
 
@@ -289,11 +293,11 @@ class SistemaGUI:
      # crear reseva, Cancelar Reserva , mostrar  logs, limpiar campos y Salir
         tk.Button(self.root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
         # Modificó está línea para redistribuir la interfaz
-        # mejorando su presentación. (JFM - JHAR)
+        # mejorando su presentación. (JHAR)
         tk.Button(self.root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=9, column=2, columnspan=2, sticky="ew", padx=2)
        
-        tk.Button(self.root, text="Limpiar",  command=self.limpiar).grid(row=10, column=0, sticky="ew", padx=2)
-        tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs).grid(row=10, column=1, sticky="ew", padx=2)
+        tk.Button(self.root, text="Limpiar",  command=self.limpiar)      .grid(row=10, column=0, sticky="ew", padx=2)
+        tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs) .grid(row=10, column=1, sticky="ew", padx=2)
         # -------- SECCIÓN 7: LISTA DE RESERVAS (JFM) --------
         self.lista = tk.Listbox(self.root, width=60)
         self.lista.grid(row=11, column=0, columnspan=4, pady=(6, 4))
@@ -301,9 +305,9 @@ class SistemaGUI:
         tk.Button(self.root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
     # ===================================================
     # REQUERIMIENTO R6
-    # Diseñar sección de visualización de reservas
+    # Diseñar sección de visualización de reservas (JHAR)
     # Se crea la sección según las necesidades del
-    # programa según las necesidades actuales. (JHAR)
+    # programa según las necesidades actuales.
     # ===================================================
         
     # Contenedor que desplegará la sección de las reservas
@@ -326,8 +330,6 @@ class SistemaGUI:
         self.lista = tk.Listbox(cont_reservas_creadas, width=60)
         self.lista.grid(row=1, column=0, padx=10, pady=10)
         
-        # Contenedor para organizar los botones correspondientes
-        # a R6. (JHAR)
         cont_botones = tk.Frame(cont_reservas_creadas, background="#8CB7E2")
         cont_botones.rowconfigure(0, weight=1)
         cont_botones.rowconfigure(1, weight=1)
@@ -342,7 +344,7 @@ class SistemaGUI:
         
         
         # Se actualiza donde se muestra el botón cancelar
-        # reserva. (JFM - JHAR)
+        # reserva. (JHAR)
         tk.Button(cont_botones, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=1, column=1, padx=10, pady=10, sticky='we')
 
    
@@ -375,6 +377,10 @@ class SistemaGUI:
         raise ValueError("Debe seleccionar un cliente")
 
     def crear_reserva(self):
+        # Conexión con requerimiento R9 (YTVCH)
+        if not self.verificar_seleccion_servicio():
+         return
+            
         try:
             cliente = self.obtener_cliente()
             servicio = self.servicios[self.servicio_var.get()]
@@ -413,19 +419,17 @@ class SistemaGUI:
             return 15
 
         return 0
-    # Función para ver detalle completo de la reserva. (JHAR - JJBT)
+    # Función para ver detalle completo de la reserva. (JHAR)
     def ver_reserva(self):
        self.preview.delete("1.0", tk.END)
-       
-       # Se usa textwrap para mejorar la presentación
-       # y con esto se corrige la identación. (JHAR)
-       texto = textwrap.dedent(f"""
-                Cliente: {self.cliente_var.get()}
-                Servicio: {self.servicio_var.get()}
-                Inicio: {self.inicio_entry.get()}
-                Fin: {self.fin_entry.get()}
-                Descuento: {self.obtener_descuento()}%
-                """)
+
+       texto = f"""
+Cliente: {self.cliente_var.get()}
+Servicio: {self.servicio_var.get()}
+Inicio: {self.inicio_entry.get()}
+Fin: {self.fin_entry.get()}
+Descuento: {self.obtener_descuento()}%
+"""
        self.preview.insert(tk.END, texto)
     
     def cancelar_reserva(self):
@@ -466,6 +470,7 @@ class SistemaGUI:
 
     # Limpia todos los campos
     def limpiar(self):
+
         self.id_entry.delete(0, tk.END)
         self.nombre_entry.delete(0, tk.END)
         self.servicio_var.set("")
@@ -477,6 +482,49 @@ class SistemaGUI:
         self.desc_15.set(False)
         self.preview.delete("1.0", tk.END)
 
+    # ============================================
+    # INICIO REQUERIMIENTO R8 (YTVCH)
+    # Habilitar selección de servicio tras elegir cliente.
+    # ============================================
+    def validar_estado_seleccion(self, *args):
+        """
+        Si el usuario no ha seleccionado un cliente para la reserva no se habilita
+        la selección de servicios y las entradas de la duración (YTVCH)
+        """
+        cliente_seleccionado = self.cliente_var.get()
+
+        # Validación para habilitar widgets solo si hay un cliente válido (YTVCH)
+        if cliente_seleccionado != "" and cliente_seleccionado != "No hay clientes":
+            self.menu_servicios.config(state="normal")
+            self.inicio_entry.config(state="normal")
+            self.fin_entry.config(state="normal")
+        else:
+            # Mantener deshabilitado si no hay selección previa (YTVCH)
+            self.menu_servicios.config(state="disabled")
+            self.inicio_entry.config(state="disabled")
+            self.fin_entry.config(state="disabled")
+    # FIN REQUERIMIENTO R8 (YTVCH)
+
+    # ============================================
+    # INICIO REQUERIMIENTO R9 (YTVCH)
+    # Verificar selección de servicio antes de registrar reserva.
+    # ============================================
+    def verificar_seleccion_servicio(self):
+        """
+        Verifica que el servicio seleccionado exista en self.servicios (YTVCH)
+        """
+        try:
+            seleccion = self.servicio_var.get()
+            # Se conecta con self.servicios para validar la opción elegida (YTVCH)
+            if seleccion == "Escoge un servicio" or seleccion == "" or self.servicios[seleccion] is None:
+                raise ServicioNoSeleccionadoError("Debe seleccionar un servicio de la lista")
+            return True 
+
+        except ServicioNoSeleccionadoError as e:
+            messagebox.showwarning("Información de Selección", str(e))
+            Logger.registrar(f"R9 - Intento fallido: {e}")
+            return False
+    # FIN REQUERIMIENTO R9 (YTVCH)
 
     # Muestra los logs del sistema
     def mostrar_logs(self):
@@ -505,7 +553,6 @@ class SistemaGUI:
 
      texto.pack(side="left", fill="both", expand=True)
      scroll.pack(side="right", fill="y")
-     
     def salir(self):
         Logger.registrar("Sistema cerrado")
         self.root.destroy()
@@ -515,3 +562,4 @@ class SistemaGUI:
 # ============================================
 if __name__ == "__main__":
     SistemaGUI()
+        
