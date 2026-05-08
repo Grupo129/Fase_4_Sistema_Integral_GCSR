@@ -12,8 +12,11 @@ from abc import ABC, abstractmethod
 import datetime
 import tkinter as tk
 from tkinter import messagebox
-# Importación para estilos personalizados.
+# Importación para estilos personalizados. (JHAR)
 from tkinter import ttk
+# Textwrap ayuda a mejorar la presentación del
+# texto en el mensaje informativo de ver_reserva. (JHAR)
+import textwrap
 import os
 
 # ============================================
@@ -55,7 +58,7 @@ class Servicio(ABC):
         pass
 
 # ============================================
-# SERVICIOS (POLIMORFISMO) (EGC
+# SERVICIOS (POLIMORFISMO) (EGC)
 # ============================================
 class ReservaSala(Servicio):
     def __init__(self):
@@ -157,6 +160,7 @@ class SistemaGUI:
         self.clientes = []
         self.reservas = []
         self.servicios = {
+            "Escoge un servicio": None,
             "Sala": ReservaSala(),
             "Equipos": AlquilerEquipos(),
             "Asesoria": AsesoriaEspecializada()
@@ -164,7 +168,7 @@ class SistemaGUI:
 
         # Aporto funcionalidad al requerimiento R3, para mejorar la
         # la visualización de la ventana del programa. (JHAR)
-        self.centrar_ventana(self.root, 566, 500)
+        self.centrar_ventana(self.root, 566, 800)
         
         self.root.mainloop()
 
@@ -172,21 +176,21 @@ class SistemaGUI:
     
     def centrar_ventana(self, ventana, ancho, alto):
         
-        # Variables para obtener el ancho y el alto de la pantalla.
+        # Variables para obtener el ancho y el alto de la pantalla. (JHAR)
         ancho_dispositivo = ventana.winfo_screenwidth()
         alto_dispositivo = ventana.winfo_screenheight()
         
-        # Calculos para centrar la ventana.
+        # Calculos para centrar la ventana. (JHAR)
         posicion_x = round((ancho_dispositivo - ancho) / 2)
         posicion_y = round((alto_dispositivo - alto) / 2)
         
-        # Le indico a Python como centar la ventana.
+        # Le indico a Python como centar la ventana. (JHAR)
         ventana.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
     
         # -------- Sección de personalización para R6 (JHAR) --------
         
         # Este estilo ayuda a no saturar el código
-        # de la etiqueta del título de R6.
+        # de la etiqueta del título de R6. (JHAR)
         estilo_interfaz = ttk.Style()
         estilo_interfaz.theme_use('clam')
     
@@ -240,7 +244,7 @@ class SistemaGUI:
      # de lista para selecionar los servicios "
         
         tk.Label(self.root, text="Servicio").grid(row=4, column=0)
-        self.servicio_var = tk.StringVar(value="Sala")
+        self.servicio_var = tk.StringVar(value="Escoge un servicio")
         tk.OptionMenu(self.root, self.servicio_var, *self.servicios.keys())\
         .grid(row=4, column=1, sticky="ew")
 
@@ -285,11 +289,11 @@ class SistemaGUI:
      # crear reseva, Cancelar Reserva , mostrar  logs, limpiar campos y Salir
         tk.Button(self.root, text="Crear Reserva", command=self.crear_reserva).grid(row=7, column=0, columnspan=2)
         # Modificó está línea para redistribuir la interfaz
-        # mejorando su presentación. (JHAR)
+        # mejorando su presentación. (JFM - JHAR)
         tk.Button(self.root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=9, column=2, columnspan=2, sticky="ew", padx=2)
        
-        tk.Button(self.root, text="Limpiar",  command=self.limpiar)      .grid(row=10, column=0, sticky="ew", padx=2)
-        tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs) .grid(row=10, column=1, sticky="ew", padx=2)
+        tk.Button(self.root, text="Limpiar",  command=self.limpiar).grid(row=10, column=0, sticky="ew", padx=2)
+        tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs).grid(row=10, column=1, sticky="ew", padx=2)
         # -------- SECCIÓN 7: LISTA DE RESERVAS (JFM) --------
         self.lista = tk.Listbox(self.root, width=60)
         self.lista.grid(row=11, column=0, columnspan=4, pady=(6, 4))
@@ -297,9 +301,9 @@ class SistemaGUI:
         tk.Button(self.root, text="Salir", command=self.salir, bg="red", fg="white").grid(row=10, column=0, columnspan=2)
     # ===================================================
     # REQUERIMIENTO R6
-    # Diseñar sección de visualización de reservas (JHAR)
+    # Diseñar sección de visualización de reservas
     # Se crea la sección según las necesidades del
-    # programa según las necesidades actuales.
+    # programa según las necesidades actuales. (JHAR)
     # ===================================================
         
     # Contenedor que desplegará la sección de las reservas
@@ -322,6 +326,8 @@ class SistemaGUI:
         self.lista = tk.Listbox(cont_reservas_creadas, width=60)
         self.lista.grid(row=1, column=0, padx=10, pady=10)
         
+        # Contenedor para organizar los botones correspondientes
+        # a R6. (JHAR)
         cont_botones = tk.Frame(cont_reservas_creadas, background="#8CB7E2")
         cont_botones.rowconfigure(0, weight=1)
         cont_botones.rowconfigure(1, weight=1)
@@ -336,7 +342,7 @@ class SistemaGUI:
         
         
         # Se actualiza donde se muestra el botón cancelar
-        # reserva. (JHAR)
+        # reserva. (JFM - JHAR)
         tk.Button(cont_botones, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=1, column=1, padx=10, pady=10, sticky='we')
 
    
@@ -407,17 +413,19 @@ class SistemaGUI:
             return 15
 
         return 0
-    # Función para ver detalle completo de la reserva. (JHAR)
+    # Función para ver detalle completo de la reserva. (JHAR - JJBT)
     def ver_reserva(self):
        self.preview.delete("1.0", tk.END)
-
-       texto = f"""
-Cliente: {self.cliente_var.get()}
-Servicio: {self.servicio_var.get()}
-Inicio: {self.inicio_entry.get()}
-Fin: {self.fin_entry.get()}
-Descuento: {self.obtener_descuento()}%
-"""
+       
+       # Se usa textwrap para mejorar la presentación
+       # y con esto se corrige la identación. (JHAR)
+       texto = textwrap.dedent(f"""
+                Cliente: {self.cliente_var.get()}
+                Servicio: {self.servicio_var.get()}
+                Inicio: {self.inicio_entry.get()}
+                Fin: {self.fin_entry.get()}
+                Descuento: {self.obtener_descuento()}%
+                """)
        self.preview.insert(tk.END, texto)
     
     def cancelar_reserva(self):
@@ -497,6 +505,7 @@ Descuento: {self.obtener_descuento()}%
 
      texto.pack(side="left", fill="both", expand=True)
      scroll.pack(side="right", fill="y")
+     
     def salir(self):
         Logger.registrar("Sistema cerrado")
         self.root.destroy()
@@ -506,4 +515,3 @@ Descuento: {self.obtener_descuento()}%
 # ============================================
 if __name__ == "__main__":
     SistemaGUI()
-        
