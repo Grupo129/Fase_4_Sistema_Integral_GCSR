@@ -132,7 +132,7 @@ class Reserva:
             raise
 
     def calcular(self):
-        dias = (self.fin - self.inicio).days
+        dias = (self.fin - self.inicio).days + 1
         return self.servicio.calcular_costo(dias)
 
     def cancelar(self):
@@ -384,8 +384,19 @@ class SistemaGUI:
                 servicio,
                 self.inicio_entry.get(),
                 self.fin_entry.get()
+            
             )
+            
+            
+            descuento = self.obtener_descuento()
 
+            if descuento > 0:
+              reserva.costo = reserva.costo - (reserva.costo * descuento / 100)
+            
+            
+               
+               
+               
             self.reservas.append(reserva)
 
             self.lista.insert(tk.END,
