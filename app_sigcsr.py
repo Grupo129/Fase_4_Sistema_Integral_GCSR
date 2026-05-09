@@ -126,13 +126,37 @@ class Cliente:
 # Método encargado de validar que la identificación
 # contenga únicamente valores numéricos. Si la validación falla, se lanza una excepción personalizada.
     def set_identificacion(self, identificacion):
+
+        # Elimina espacios
+        identificacion = identificacion.strip()
+
+        # Verifica que solo tenga números
         if not identificacion.isdigit():
-            raise IdentificacionInvalidaError("La identificación debe ser numérica")
+            raise IdentificacionInvalidaError(
+                "La identificación debe ser numérica"
+            )
+
+        # Valida longitud mínima y máxima
+        if len(identificacion) < 6 or len(identificacion) > 10:
+            raise IdentificacionInvalidaError(
+                "La identificación debe tener entre 6 y 10 dígitos"
+            )
+
         self.__identificacion = identificacion
 
     def set_nombre(self, nombre):
-        if not nombre.strip():
+
+        # Elimina espacios al inicio y final
+        nombre = nombre.strip()
+
+        # Verifica que no esté vacío
+        if not nombre:
             raise ValueError("El nombre no puede estar vacío")
+
+        # Verifica que solo contenga letras y espacios
+        if not all(parte.isalpha() for parte in nombre.split()):
+            raise ValueError("El nombre solo debe contener letras")
+
         self.__nombre = nombre
 
     def get_nombre(self):
@@ -188,38 +212,59 @@ class SistemaGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Software FJ")
+
         # ===== CAMBIO INTERFAZ (EGC) =====
         # Permite redimensionar la ventana.
+        self.root.geometry("1100x760")
+        self.root.state("zoomed")
+        self.root.configure(bg="#F4F6F9")
         self.root.resizable(True, True)
+
         # ===== CAMBIO INTERFAZ (EGC) =====
         # Paleta de colores general del sistema.
         self.color_fondo = "#F4F6F9"
         self.color_titulo = "#1D3557"
         self.color_boton = "#457B9D"
-        self.color_boton_texto = "white"
-        self.color_panel = "#DCEAF7"
-        
+	
         # ===== CAMBIO INTERFAZ (EGC) =====
-        # Título principal visual del sistema.
-        titulo = tk.Label(
-            self.root,
-            text="Sistema Integral de Gestión de Reservas",
-            font=("Tahoma", 16, "bold"),
-            bg=self.color_fondo,
-            fg=self.color_titulo
+        # Se utiliza el tema "clam" para una apariencia más moderna
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure(
+            "Titulo.TLabel",
+            background="#1D3557",
+            foreground="white",
+            font=("Tahoma", 13, "bold"),
+            padding=3
         )
-        titulo.grid(row=0, column=0, columnspan=4, pady=15)
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        # Distribución flexible de columnas.
-        self.root.columnconfigure(0, weight=1)
-        self.root.columnconfigure(1, weight=2)
-        self.root.columnconfigure(2, weight=1)
-        self.root.columnconfigure(3, weight=1)
-        
-    # ===== CAMBIO INTERFAZ (EGC) =====
-    # Color general de fondo de la ventana.
-        self.root.configure(bg="#F4F6F9")
 
+        style.configure(
+            "Seccion.TLabelframe",
+            background="#F4F6F9",
+            font=("Tahoma", 8, "bold")
+        )
+
+        style.configure(
+            "Seccion.TLabelframe.Label",
+            background="#F4F6F9",
+            foreground="#1D3557",
+            font=("Tahoma", 8, "bold")
+        )
+
+        style.configure(
+            "TLabel",
+            background="#F4F6F9",
+            font=("Tahoma", 8)
+        )
+
+        style.configure(
+            "TButton",
+            font=("Tahoma", 8, "bold"),
+            padding=4
+        )
+	
+	# ===== CAMBIO INTERFAZ (EGC) =====
+	# datos en memoria (sin base de datos) 
         self.clientes = []
         self.reservas = []
         self.servicios = {
@@ -228,211 +273,483 @@ class SistemaGUI:
             "Asesoria": AsesoriaEspecializada()
         }
         
-        # Aporto funcionalidad al requerimiento R3, para mejorar la
-        # la visualización de la ventana del programa. (JHAR)
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        # Nuevo tamaño de ventana para mejor distribución visual.
-        self.centrar_ventana(self.root, 950, 850)
-        
-        self.root.mainloop()
+  	# ============================================
+        # CONTENEDOR PRINCIPAL
+        # ===== REDISEÑO Y REORGANIZACIÓN UI (EGC) =====
+        # ============================================
 
-    # ------- Funcionalidad para centrar la ventana (JHAR) -------
-    
-    def centrar_ventana(self, ventana, ancho, alto):
-        
-        # Variables para obtener el ancho y el alto de la pantalla. (JHAR)
-        ancho_dispositivo = ventana.winfo_screenwidth()
-        alto_dispositivo = ventana.winfo_screenheight()
-        
-        # Calculos para centrar la ventana. (JHAR)
-        posicion_x = round((ancho_dispositivo - ancho) / 2)
-        posicion_y = round((alto_dispositivo - alto) / 2)
-        
-        # Le indico a Python como centar la ventana. (JHAR)
-        ventana.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
-    
-        # -------- Sección de personalización para R6 (JHAR) --------
-        
-        # Este estilo ayuda a no saturar el código
-        # de la etiqueta del título de R6. (JHAR)
-        estilo_interfaz = ttk.Style()
-        estilo_interfaz.theme_use('clam')
-    
-        estilo_interfaz.configure('Titulo.TLabel',
-                                  background='#1d2d44',
-                                  foreground='white',
-                                  font=('Tahoma', 11, 'bold'))
+        # Se crea el contenedor principal encargado
+        # de almacenar y organizar visualmente todas
+        # las secciones de la interfaz gráfica. (EGC)
 
-        # -------- REGISTRO CLIENTE (JFM)--------
-        
-        # "Se crea la etiqueta para mostar donde se debe 
-        # ingresar el numero de identificacion del cliente: tk.Label , 
-        # al frente se crea el espacio donde se puede escribir el numero: tk.Entry "
-        
-        tk.Label(self.root, text="ID Cliente").grid(row=1,column=0,padx=5,pady=5,sticky="e")
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        self.id_entry = tk.Entry(self.root,font=("Tahoma", 10),relief="solid",borderwidth=1)
-        self.id_entry.grid(row=1,column=1,padx=5,pady=5,sticky="ew")
+        contenedor = tk.Frame(self.root, bg=self.color_fondo)
+        contenedor.pack(fill="x",padx=15,pady=2,side="bottom")
 
+          # ============================================
+        # TITULO PRINCIPAL
+        # ===== PERSONALIZACIÓN VISUAL R6 (JHAR) =====
+        # ============================================
 
-     # "Se crea la etiqueta para mostar donde se debe 
-     # ingresar nombre del cliente: tk.Label  
-     # al frente se crea el espacio donde se puede escribir el nombre: tk.Entry"
-        
-        tk.Label(self.root, text="Nombre").grid(row=2,column=0,padx=5,pady=5,sticky="e")
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        self.nombre_entry = tk.Entry(self.root,font=("Tahoma", 10),relief="solid",borderwidth=1)
-        self.nombre_entry.grid(row=2,column=1,padx=5,pady=5,sticky="ew")
+        # Etiqueta principal del sistema encargada
+        # de mostrar el nombre de la aplicación. (JHAR - EGC)
 
-        
-     #"Boton para registrar los datos ingresados"
-     # ===== CAMBIO INTERFAZ (EGC) =====
-        tk.Button(self.root, text="Registrar Cliente", command=self.registrar_cliente,width=18,height=1,font=("Tahoma", 10,"bold"),bg=self.color_boton,fg=self.color_boton_texto,relief="flat").grid(row=3,column=1,padx=5,pady=8,sticky="w")
-    
-                
-        # -------- SELECCIÓN CLIENTE (JFM)--------
-        
-     # "Se crea la etiqueta para mostar donde seleccionar
-     # el cliente: tk.Label  
-     # al frente se crea el espacio donde queda el boton en forma 
-     # de lista para selecionar los clientes "
-        
-        tk.Label(self.root, text="Seleccionar Cliente").grid(row=4,column=0,padx=5,pady=5,sticky="e")
+        titulo = ttk.Label(
+            contenedor,
+            text="Sistema Integral de Gestión de Reservas",
+            style="Titulo.TLabel",
+            anchor="center"
+        )
+
+        titulo.pack(fill="x", pady=(0, 8))
+
+        # ============================================
+        # FRAME CLIENTE
+        # -------- REGISTRO CLIENTE (JFM) --------
+        # ===== REORGANIZACIÓN VISUAL (EGC) =====
+        # ============================================
+
+        # Se crea la sección correspondiente al
+        # registro de clientes dentro de la
+        # interfaz gráfica del sistema. (JFM - EGC)
+
+        frame_cliente = ttk.LabelFrame(
+            contenedor,
+            text="Datos del Cliente",
+            style="Seccion.TLabelframe"
+        )
+
+        frame_cliente.pack(fill="x", pady=10)
+
+        # "Se crea la etiqueta para mostrar donde
+        # se debe ingresar el número de identificación
+        # del cliente: ttk.Label, al frente se crea
+        # el espacio donde se puede escribir el número:
+        # ttk.Entry". (JFM)
+
+        ttk.Label(
+            frame_cliente,
+            text="ID Cliente"
+        ).grid(row=0, column=0, padx=10, pady=4)
+
+        self.id_entry = ttk.Entry(
+            frame_cliente,
+            width=40
+        )
+
+        self.id_entry.grid(
+            row=0,
+            column=1,
+            padx=10,
+            pady=5
+        )
+
+        # "Botón para registrar los datos ingresados". (JFM)
+
+        ttk.Button(
+            frame_cliente,
+            text="Registrar Cliente",
+            command=self.registrar_cliente
+        ).grid(
+            row=0,
+            column=2,
+            padx=10
+        )
+
+        # "Se crea la etiqueta para mostrar donde
+        # se debe ingresar el nombre del cliente:
+        # ttk.Label. Al frente se crea el espacio
+        # donde se puede escribir el nombre:
+        # ttk.Entry". (JFM)
+
+        ttk.Label(
+            frame_cliente,
+            text="Nombre"
+        ).grid(
+            row=1,
+            column=0,
+            padx=10,
+            pady=3
+        )
+
+        self.nombre_entry = ttk.Entry(
+            frame_cliente,
+            width=40
+        )
+
+        self.nombre_entry.grid(
+            row=1,
+            column=1,
+            padx=10,
+            pady=5
+        )
+
+        # ============================================
+        # FRAME RESERVA
+        # ===== REORGANIZACIÓN VISUAL (EGC) =====
+        # ============================================
+
+        # Se crea la sección correspondiente a los
+        # datos relacionados con la creación y
+        # gestión de reservas. (EGC)
+
+        frame_reserva = ttk.LabelFrame(
+            contenedor,
+            text="Datos de la Reserva",
+            style="Seccion.TLabelframe"
+        )
+
+        frame_reserva.pack(fill="x", pady=4)
+
+        # -------- SELECCIÓN CLIENTE (JFM) --------
+
+        # "Se crea la etiqueta para mostrar donde
+        # seleccionar el cliente: ttk.Label.
+        # Al frente se crea el espacio donde queda
+        # la lista desplegable para seleccionar
+        # los clientes registrados". (JFM)
+
+        ttk.Label(
+            frame_reserva,
+            text="Seleccionar Cliente"
+        ).grid(
+            row=0,
+            column=0,
+            padx=10,
+            pady=5
+        )
+
         self.cliente_var = tk.StringVar()
-        self.menu_clientes = tk.OptionMenu(self.root, self.cliente_var, "")
-        self.menu_clientes.grid(row=4,column=1,padx=5,pady=5,sticky="ew")
 
-        self.cliente_var.trace("w", self.validar_estado_seleccion) # (YTVCH)
+        self.combo_clientes = ttk.Combobox(
+            frame_reserva,
+            textvariable=self.cliente_var,
+            state="readonly",
+            width=40
+        )
+
+        self.combo_clientes.grid(
+            row=0,
+            column=1,
+            padx=10,
+            pady=3
+        )
+
+        # -------- SECCIÓN DESCUENTOS (EGC) --------
+
+        # Se crea la sección correspondiente a los
+        # descuentos aplicables a la reserva. (EGC)
+
+        self.descuento_var = tk.IntVar(value=0)
+
+        frame_desc = tk.Frame(
+            frame_reserva,
+            bg=self.color_fondo
+        )
+
+        frame_desc.grid(
+            row=0,
+            column=2,
+            padx=10
+        )
+
+        ttk.Label(
+            frame_desc,
+            text="Desc:"
+        ).pack(side="left", padx=3)
+
+        ttk.Radiobutton(
+            frame_desc,
+            text="5%",
+            variable=self.descuento_var,
+            value=5
+        ).pack(side="left")
+
+        ttk.Radiobutton(
+            frame_desc,
+            text="10%",
+            variable=self.descuento_var,
+            value=10
+        ).pack(side="left")
+
+        ttk.Radiobutton(
+            frame_desc,
+            text="15%",
+            variable=self.descuento_var,
+            value=15
+        ).pack(side="left")
 
         # -------- SERVICIO (JFM) --------
-        
-     # "Se crea la etiqueta para mostar donde seleccionar
-     # el servicio: tk.Label  
-     # al frente se crea el espacio donde queda el boton en forma 
-     # de lista para selecionar los servicios "
-        
-        tk.Label(self.root, text="Servicio").grid(row=5,column=0,padx=5,pady=5,sticky="e")
-        self.servicio_var = tk.StringVar(value="Sala")
-        tk.OptionMenu(self.root, self.servicio_var, *self.servicios.keys())\
-        .grid(row=5,column=1,padx=5,pady=5,sticky="ew")
 
-        # -------- FECHAS (JFM)--------
-        
-     # "Se crea la etiqueta para mostar donde ingresar
-     # la fecha de inicio: tk.Label  
-     # al frente se crea el espacio donde queda el espacio 
-     # para ingresar la fecha "
-     
-        tk.Label(self.root, text="Inicio (YYYY-MM-DD)").grid(row=6,column=0,padx=5,pady=5,sticky="e")
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        self.inicio_entry = tk.Entry(self.root,font=("Tahoma", 10),relief="solid",borderwidth=1)
-        self.inicio_entry.grid(row=6,column=1,padx=5,pady=5,sticky="ew")
-    
-     # "Se crea la etiqueta para mostar donde ingresar
-     # la fecha de fin tk.Label  
-     # al frente se crea el espacio donde queda el espacio 
-     # para ingresar la fecha "
-     
-        tk.Label(self.root, text="Fin (YYYY-MM-DD)").grid(row=7,column=0,padx=5,pady=5,sticky="e")
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        self.fin_entry = tk.Entry(self.root,font=("Tahoma", 10),relief="solid",borderwidth=1)
-        self.fin_entry.grid(row=7,column=1,padx=5,pady=5,sticky="ew")
+        # "Se crea la etiqueta para mostrar donde
+        # seleccionar el servicio: ttk.Label.
+        # Al frente se crea el espacio donde queda
+        # la lista desplegable para seleccionar
+        # los servicios". (JFM)
 
-# -------- SECCIÓN 5: VISTA PREVIA --------
-        ttk.Label(self.root, text="Vista previa:").grid(row=9, column=0, sticky="nw", padx=4)
-        self.preview = tk.Text(self.root, height=5, width=40,bg="white",fg="black",font=("Consolas", 10),relief="solid",borderwidth=1)
-        self.preview.grid(row=9,column=1,columnspan=3,padx=5,pady=5,sticky="ew")
-        # -------- BOTONES (JFM)--------
-        # -------- SECCIÓN 4: DESCUENTOS --------
-        self.descuento_habilitado = tk.BooleanVar()
-        ttk.Checkbutton(self.root, text="Aplicar descuento", variable=self.descuento_habilitado)\
-    .grid(row=8, column=0, sticky="w", padx=4)
+        ttk.Label(
+            frame_reserva,
+            text="Servicio"
+        ).grid(
+            row=1,
+            column=0,
+            padx=10,
+            pady=5
+        )
 
-        self.desc_5  = tk.BooleanVar()
-        self.desc_10 = tk.BooleanVar()
-        self.desc_15 = tk.BooleanVar()
-        ttk.Checkbutton(self.root, text="5%",  variable=self.desc_5) .grid(row=8, column=1)
-        ttk.Checkbutton(self.root, text="10%", variable=self.desc_10).grid(row=8, column=2)
-        ttk.Checkbutton(self.root, text="15%", variable=self.desc_15).grid(row=8, column=3)
+        self.servicio_var = tk.StringVar()
 
-     # "Se crean los botones para 
-     # crear reseva, Cancelar Reserva , mostrar  logs, limpiar campos y Salir
-     # ===== CAMBIO INTERFAZ (EGC) =====
-        tk.Button(self.root, text="Crear Reserva", command=self.crear_reserva,width=16,height=1,font=("Tahoma", 10,"bold"),bg=self.color_boton,fg=self.color_boton_texto,relief="flat").grid(row=10, column=1, padx=5, pady=5)   
-        
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        # Duplicidad en el botón cancelar reserva,para mejorar la presentación de la interfaz se desactiva del código.
-        # temporalmente y evaluar su eliminación definitiva.
-        '''
-          # Modificó está línea para redistribuir la interfaz
-        # mejorando su presentación. (JFM - JHAR)
-        tk.Button(self.root, text="Cancelar Reserva", command=self.cancelar_reserva).grid(row=9, column=2, columnspan=2, sticky="ew", padx=2'''
-        
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        tk.Button(self.root, text="Limpiar",  command=self.limpiar,width=16,height=1,font=("Tahoma", 10, "bold"),bg=self.color_boton,fg=self.color_boton_texto,relief="flat").grid(row=10, column=0,padx=5,pady=5)
-        
-        # ===== CAMBIO INTERFAZ (EGC) =====        
-        tk.Button(self.root, text="Ver Logs", command=self.mostrar_logs,width=16,height=1,font=("Tahoma", 10, "bold"),bg=self.color_boton,fg=self.color_boton_texto,relief="flat").grid(row=10, column=2, padx=5, pady=5)
-        
-        # -------- SECCIÓN 7: LISTA DE RESERVAS (JFM) --------
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        # Se desabilita esta linea porque hay duplicidad y se crea en LISTA DE RESERVAS y CONTROLES (JFM-JHAR)
-        '''self.lista = tk.Listbox(self.root, width=60)
-        self.lista.grid(row=11, column=0, columnspan=4, pady=(6, 4))'''
-        
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        # Botón salir resaltado visualmente.
-        tk.Button(self.root, text="Salir", command=self.salir, bg="#C1121F", fg="white",font=("Tahoma", 10, "bold"),relief="flat",width=16,height=1).grid(row=12, column=3, sticky="e", padx=10, pady=15)
+        self.combo_servicios = ttk.Combobox(
+            frame_reserva,
+            textvariable=self.servicio_var,
+            values=list(self.servicios.keys()),
+            state="readonly",
+            width=40
+        )
+
+        self.combo_servicios.grid(
+            row=1,
+            column=1,
+            padx=10,
+            pady=5
+        )
+
+        # -------- FECHAS (JFM) --------
+
+        # "Se crea la etiqueta para mostrar donde
+        # ingresar la fecha de inicio: ttk.Label.
+        # Al frente se crea el espacio donde queda
+        # el campo para ingresar la fecha". (JFM)
+
+        ttk.Label(
+            frame_reserva,
+            text="Inicio (YYYY-MM-DD)"
+        ).grid(
+            row=2,
+            column=0,
+            padx=10,
+            pady=5
+        )
+
+        self.inicio_entry = ttk.Entry(
+            frame_reserva,
+            width=40
+        )
+
+        self.inicio_entry.grid(
+            row=2,
+            column=1,
+            padx=10,
+            pady=10
+        )
+
+        # "Se crea la etiqueta para mostrar donde
+        # ingresar la fecha final: ttk.Label.
+        # Al frente se crea el espacio donde queda
+        # el campo para ingresar la fecha". (JFM)
+
+        ttk.Label(
+            frame_reserva,
+            text="Fin (YYYY-MM-DD)"
+        ).grid(
+            row=3,
+            column=0,
+            padx=10,
+            pady=5
+        )
+
+        self.fin_entry = ttk.Entry(
+            frame_reserva,
+            width=40
+        )
+
+        self.fin_entry.grid(
+            row=3,
+            column=1,
+            padx=10,
+            pady=10
+        )
+
+        # ============================================
+        # AREA CENTRAL
+        # ===== REORGANIZACIÓN VISUAL (EGC) =====
+        # ============================================
+
+        frame_central = tk.Frame(
+            contenedor,
+            bg=self.color_fondo
+        )
+
+        frame_central.pack(
+            fill="both",
+            pady=5
+        )
+
+        # ============================================
+        # VISTA PREVIA
+        # -------- SECCIÓN 5: VISTA PREVIA --------
+        # ===== REORGANIZACIÓN VISUAL (EGC) =====
+        # ============================================
+
+        frame_preview = ttk.LabelFrame(
+            frame_central,
+            text="Vista Previa",
+            style="Seccion.TLabelframe"
+        )
+
+        frame_preview.pack(
+            side="left",
+            fill="both",
+            expand=True,
+            padx=(0, 10)
+        )
+
+        self.preview = tk.Text(
+            frame_preview,
+            height=1,
+            font=("Consolas", 11),
+            relief="solid",
+            borderwidth=1
+        )
+
+        self.preview.pack(
+            fill="both",
+            expand=True,
+            padx=5,
+            pady=5
+        )
+
+        # ============================================
+        # BOTONES
+        # -------- BOTONES (JFM) --------
+        # ===== REORGANIZACIÓN VISUAL (EGC) =====
+        # ============================================
+
+        frame_botones = ttk.LabelFrame(
+            frame_central,
+            text="Acciones",
+            style="Seccion.TLabelframe"
+        )
+
+        frame_botones.pack(
+            side="right",
+            fill="y"
+        )
+
+        ttk.Button(
+            frame_botones,
+            text="Crear Reserva",
+            command=self.crear_reserva
+        ).pack(fill="x", padx=8, pady=2)
+
+        ttk.Button(
+            frame_botones,
+            text="Ver Reserva",
+            command=self.ver_reserva
+        ).pack(fill="x", padx=8, pady=1)
+
+        ttk.Button(
+            frame_botones,
+            text="Limpiar",
+            command=self.limpiar
+        ).pack(fill="x", padx=8, pady=1)
+
+        ttk.Button(
+            frame_botones,
+            text="Ver Logs",
+            command=self.mostrar_logs
+        ).pack(fill="x", padx=8, pady=1)
+
+        ttk.Button(
+            frame_botones,
+            text="Cancelar Reserva",
+            command=self.cancelar_reserva
+        ).pack(fill="x", padx=8, pady=1)
+
+	# ===================================================
+    	# REQUERIMIENTO R6
+    	# Diseñar sección de visualización de reservas
+    	# Se crea la sección según las necesidades del
+    	# programa según las necesidades actuales. (JHAR)
+        # ===== REORGANIZACIÓN VISUAL (EGC) =====
+        # ============================================
+
+        frame_reservas = ttk.LabelFrame(
+            contenedor,
+            text="Reservas Contratadas",
+            style="Seccion.TLabelframe"
+        )
+
+        frame_reservas.pack(
+            fill="both",
+            expand=False,
+            pady=4
+        )
+
+        self.lista = tk.Listbox(
+            frame_reservas,
+            font=("Consolas", 11),
+            height=4,
+            relief="solid",
+            borderwidth=1
+        )
+
+        self.lista.pack(
+            side="left",
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=5
+        )
+
+        scrollbar = ttk.Scrollbar(
+            frame_reservas,
+            orient="vertical",
+            command=self.lista.yview
+        )
+
+        self.lista.config(
+            yscrollcommand=scrollbar.set
+        )
+
+        scrollbar.pack(
+            side="right",
+            fill="y",
+            pady=5
+        )
+
+        # ============================================
+        # BOTÓN SALIR
+        # ===== PERSONALIZACIÓN VISUAL (EGC) =====
+        # ============================================
+
+        # Botón encargado de cerrar el sistema
+        # y finalizar la ejecución del programa. (EGC)
+
+        boton_salir = tk.Button(
+            contenedor,
+            text="Salir",
+            command=self.salir,
+            bg="#C1121F",
+            fg="white",
+            font=("Tahoma", 8, "bold"),
+            relief="flat",
+            padx=12,
+            pady=3
+        )
+
+        boton_salir.pack(
+            anchor="e",
+            pady=2,
+            padx=5
+        )
+
+        # ============================================
+        # MAIN LOOP
+        # ============================================
+
+        self.root.mainloop()
          
-    # ===================================================
-    # REQUERIMIENTO R6
-    # Diseñar sección de visualización de reservas 
-    # Se crea la sección según las necesidades del
-    # programa según las necesidades actuales. (JHAR)
-    # ===================================================
-        
-    # Contenedor que desplegará la sección de las reservas
-    # creadas. (JHAR)
-        cont_reservas_creadas = tk.Frame(self.root, background="#DCEAF7")
-        cont_reservas_creadas.columnconfigure(0, weight=6)
-        cont_reservas_creadas.columnconfigure(1, weight=1)
-        cont_reservas_creadas.rowconfigure(1, weight=1)
-        cont_reservas_creadas.grid(row=11,column=0,columnspan=4,padx=20,pady=15,sticky='nsew')
-        
-    # Etiqueta para el título de R6. (JHAR)   
-        tit_reservas_contratadas = ttk.Label(cont_reservas_creadas,
-                                      text='Reservas Contratadas',
-                                      style='Titulo.TLabel',
-                                      anchor='center',
-                                      padding=10)
-        tit_reservas_contratadas.grid(row=0, column=0, columnspan=2, sticky='we')
-        
-        # -------- LISTA DE RESERVAS y CONTROLES (JFM-JHAR) --------
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        self.lista = tk.Listbox(cont_reservas_creadas, width=65,height=10,bg="white",fg="black",font=("Consolas", 10),relief="solid",borderwidth=1)
-        self.lista.grid(row=1, column=0, padx=10, pady=10)
-        
-        # Contenedor para organizar los botones correspondientes
-        # a R6. (JHAR)
-        cont_botones = tk.Frame(cont_reservas_creadas, background="#DCEAF7")
-        cont_botones.rowconfigure(0, weight=1)
-        cont_botones.rowconfigure(1, weight=1)
-        cont_botones.rowconfigure(2, weight=1)
-        cont_botones.rowconfigure(3, weight=1)
-        cont_botones.columnconfigure(1, weight=1)
-        cont_botones.grid(row=1, column=1, padx=10, pady=10, sticky='n')
-        
-        # Agrego el botón de ver detalle de la reserva. (JHAR)
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        bot_ver_reserva = tk.Button(cont_botones, text="Ver Reserva", command=self.ver_reserva,bg=self.color_boton,fg=self.color_boton_texto,font=("Tahoma", 10, "bold"),relief="flat",width=15)
-        bot_ver_reserva.grid(row=0, column=1, padx=10, pady=10, sticky='we')
-        
-        
-        # Se actualiza donde se muestra el botón cancelar
-        # reserva. (JHAR)
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        tk.Button(cont_botones, text="Cancelar Reserva", command=self.cancelar_reserva,bg=self.color_boton,fg=self.color_boton_texto,font=("Tahoma", 10, "bold"),relief="flat",width=15).grid(row=1, column=3, padx=10, pady=10, sticky='we')
-        
+       
     # =========================
     # FUNCIONES
     # =========================
@@ -441,13 +758,8 @@ class SistemaGUI:
             cliente = Cliente(self.id_entry.get(), self.nombre_entry.get())
             self.clientes.append(cliente)
 
-            menu = self.menu_clientes["menu"]
-            menu.delete(0, "end")
-
-            for c in self.clientes:
-                menu.add_command(label=c.get_nombre(),
-                                 command=lambda value=c.get_nombre(): self.cliente_var.set(value))
-
+            # ===== CAMBIO INTERFAZ (EGC) =====
+            self.combo_clientes["values"] = [c.get_nombre() for c in self.clientes]
             messagebox.showinfo("OK", "Cliente registrado")
 
         except Exception as e:
@@ -476,6 +788,11 @@ class SistemaGUI:
                 self.inicio_entry.get(),
                 self.fin_entry.get()
             )
+	    #Se activa la funcion de descuentos 
+            descuento = self.obtener_descuento()
+
+            if descuento > 0:
+              reserva.costo = reserva.costo - (reserva.costo * descuento / 100)
 
             self.reservas.append(reserva)
 
@@ -490,20 +807,12 @@ class SistemaGUI:
             messagebox.showerror("Error", str(e))
     
     def obtener_descuento(self):
+       
+        # Retorna directamente el valor seleccionado
+        # en los Radiobuttons de descuento. (EGC)
 
-        # Si no está activado el descuento, retorna 0%
-        if not self.descuento_habilitado.get():
-            return 0
-
-        # Verifica qué checkbox está activo
-        if self.desc_5.get():
-            return 5
-        if self.desc_10.get():
-            return 10
-        if self.desc_15.get():
-            return 15
-
-        return 0
+        return self.descuento_var.get()
+    
     # Función para ver detalle completo de la reserva. (JHAR - JJBT)
     def ver_reserva(self):
        self.preview.delete("1.0", tk.END)
@@ -538,7 +847,10 @@ class SistemaGUI:
         except Exception as e:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
-    def validar_fechas(self):
+
+    # EGC
+    #la validación realmente la está haciendo la clase Reserva. 	
+    '''def validar_fechas(self):
         try:
             # Construimos fechas reales
             inicio = datetime.date(2025, int(self.inicio_entry.get()))
@@ -552,7 +864,7 @@ class SistemaGUI:
 
         except Exception as e:
             # Encadenamiento de error
-            raise ValueError("Error en fechas: " + str(e))
+            raise ValueError("Error en fechas: " + str(e))'''
 
 
     # Limpia todos los campos
@@ -563,10 +875,7 @@ class SistemaGUI:
         self.servicio_var.set("")
         self.inicio_entry.delete(0, tk.END)
         self.fin_entry.delete(0, tk.END)
-        self.descuento_habilitado.set(False)
-        self.desc_5.set(False)
-        self.desc_10.set(False)
-        self.desc_15.set(False)
+        self.descuento_var.set(0) # Reinicia descuento seleccionado. (EGC)
         self.preview.delete("1.0", tk.END)
 
     # ============================================
@@ -629,9 +938,9 @@ class SistemaGUI:
     # Ventana emergente con los logs
      ventana = tk.Toplevel(self.root)
      ventana.title("Registros del sistema")
-     ventana.geometry("600x400")
+     ventana.geometry("700x500")
  
-     texto = tk.Text(ventana, wrap="word", state="normal")
+     texto = tk.Text(ventana, wrap="word", state="normal", font=("Consolas", 10))
      texto.insert("1.0", contenido)
      texto.config(state="disabled")  # solo lectura
 
