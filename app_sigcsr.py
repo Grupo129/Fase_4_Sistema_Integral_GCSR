@@ -820,7 +820,7 @@ class SistemaGUI:
             if c.get_nombre() == nombre:
                 return c
         raise ValueError("Debe seleccionar un cliente")
-
+ 
     def crear_reserva(self):
         # Conexión con requerimiento R9 (YTVCH)
         if not self.verificar_seleccion_servicio():
@@ -867,7 +867,16 @@ class SistemaGUI:
     # Función para ver detalle completo de la reserva. (JHAR - JJBT)
     def ver_reserva(self):
        self.preview.delete("1.0", tk.END)
-       
+       seleccion = self.lista.curselection()
+       if not seleccion:
+                raise ValueError("Seleccione una reserva")
+
+       i = seleccion[0]
+       descuento=self.obtener_descuento()
+       reserva_encontrada=self.reservas[i]
+       costo_original = reserva_encontrada.costo
+       costo_con_descuento = costo_original * (1 - descuento / 100)
+       duracion_dias = (reserva_encontrada.fin - reserva_encontrada.inicio).days
        # Se usa textwrap para mejorar la presentación y con esto se corrige la identación. (JHAR)
        texto = textwrap.dedent(f"""
                 Cliente: {self.cliente_var.get()}
@@ -875,6 +884,10 @@ class SistemaGUI:
                 Inicio: {self.inicio_entry.get()}
                 Fin: {self.fin_entry.get()}
                 Descuento: {self.obtener_descuento()}%
+                Duración:            {duracion_dias} día(s)
+                Costo original:      ${costo_original:.2f}
+                Costo con descuento: ${costo_con_descuento:.2f}
+                Estado:              {reserva_encontrada.estado}
                 """)
        self.preview.insert(tk.END, texto)
     
