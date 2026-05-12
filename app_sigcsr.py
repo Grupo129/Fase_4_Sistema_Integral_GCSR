@@ -193,9 +193,20 @@ class Reserva:
         except Exception as e:
             Logger.registrar(f"Error en reserva: {e}")
             raise
-
-    def calcular(self):
+    
+    # Actualización: anteriormente método 'calcular'
+    # ahora 'calcular_dias'. (JHAR)
+    def calcular_dias(self):
+        # Actualización: Cálculo correcto de días (JFM)
         dias = (self.fin - self.inicio).days + 1
+        # Se almacena el valor de los días
+        # en una variable de la clase para no perderlo.
+        # Con esto se evita redundancia de cálculo
+        # que anteriormente se presentaba al repetir
+        # la fórmula (self.fin - self.inicio).days + 1
+        # en duracion_dias, en el método ver_reserva de la
+        # clase SistemaGUI. (JHAR)
+        self.dias = dias
         return self.servicio.calcular_costo(dias)
 
     def cancelar(self):
@@ -865,18 +876,18 @@ class SistemaGUI:
             self.fin_entry.get(),
             "%Y-%m-%d"
             ).date()
-
+            
             for r in self.reservas:
-
-            # Verifica mismo servicio
+                # Verifica mismo servicio
                 if r.servicio.nombre == servicio.nombre:
 
-             # Verifica cruce de fechas
+                # Verifica cruce de fechas
                     if inicio_nuevo <= r.fin and fin_nuevo >= r.inicio:
 
                         raise ValueError(
                 f"El servicio '{servicio.nombre}' ya está reservado en esas fechas."
-            )
+                )
+
             reserva = Reserva(
                 cliente,
                 servicio,
