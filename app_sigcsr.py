@@ -1007,7 +1007,7 @@ class SistemaGUI:
             r = self.reservas[i]
 
             self.lista.insert(i,
-                f"{r.cliente.get_identificacion()} | {r.cliente.get_nombre()} - {r.servicio.nombre} - ${r.costo} - {r.estado}"
+                f"{r.cliente.obtener_identificacion()} | {r.cliente.get_nombre()} - {r.servicio.nombre} - ${r.costo} - {r.estado}"
             )
 
         except Exception as e:
