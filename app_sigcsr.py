@@ -187,7 +187,7 @@ class Reserva:
             raise
 
     def calcular(self):
-        dias = (self.fin - self.inicio).days
+        dias = (self.fin - self.inicio).days + 1
         return self.servicio.calcular_costo(dias)
 
     def cancelar(self):
@@ -829,7 +829,29 @@ class SistemaGUI:
         try:
             cliente = self.obtener_cliente()
             servicio = self.servicios[self.servicio_var.get()]
+            
+            # Validar que el servicio no esté reservado en esas fechas
+            inicio_nuevo = datetime.datetime.strptime(
+            self.inicio_entry.get(),
+            "%Y-%m-%d"
+            ).date()
 
+            fin_nuevo = datetime.datetime.strptime(
+            self.fin_entry.get(),
+            "%Y-%m-%d"
+            ).date()
+
+            for r in self.reservas:
+
+            # Verifica mismo servicio
+                if r.servicio.nombre == servicio.nombre:
+
+             # Verifica cruce de fechas
+                    if inicio_nuevo <= r.fin and fin_nuevo >= r.inicio:
+
+                        raise ValueError(
+                f"El servicio '{servicio.nombre}' ya está reservado en esas fechas."
+            )
             reserva = Reserva(
                 cliente,
                 servicio,

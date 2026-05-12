@@ -1,0 +1,14 @@
+2026-05-11 20:20:27.996478 - Reserva creada para Juan
+2026-05-11 20:20:32.381285 - El servicio 'Reserva de sala' ya está reservado en esas fechas.
+2026-05-11 20:20:37.717467 - Reserva creada para Juan
+2026-05-11 20:20:39.642979 - El servicio 'Alquiler de equipos' ya está reservado en esas fechas.
+2026-05-11 20:20:42.908098 - Reserva creada para Juan
+2026-05-11 20:20:44.807801 - El servicio 'Asesoría especializada' ya está reservado en esas fechas.
+2026-05-11 20:20:56.860571 - El servicio 'Reserva de sala' ya está reservado en esas fechas.
+2026-05-11 20:21:07.884332 - El servicio 'Reserva de sala' ya está reservado en esas fechas.
+2026-05-11 20:21:23.163122 - El servicio 'Reserva de sala' ya está reservado en esas fechas.
+2026-05-11 20:21:42.945191 - El servicio 'Reserva de sala' ya está reservado en esas fechas.
+2026-05-11 20:21:54.865690 - El servicio 'Alquiler de equipos' ya está reservado en esas fechas.
+2026-05-11 20:22:02.812932 - Reserva creada para felipe
+2026-05-11 20:22:17.731348 - Reserva creada para felipe
+2026-05-11 20:22:26.931408 - Sistema cerrado
