@@ -156,6 +156,15 @@ class Cliente:
 
     def get_nombre(self):
         return self.__nombre
+    
+    # Actualización: nuevo método que permite
+    # obtener la identificación del cliente.
+    # Permitinendo así las validaciones sobre el ID
+    # y no sobre los nombres de los clientes,
+    # en los métodos registrar_cliente y obtener_cliente
+    # de la clase SistemaGUI. (JHAR)
+    def obtener_identificacion(self):
+        return self.__identificacion
 
 # ============================================
 # REQUERIMIENTO R3)
@@ -654,7 +663,7 @@ class SistemaGUI:
         # -------- LISTA DE RESERVAS y CONTROLES (JFM - JHAR) --------
         self.lista = tk.Listbox(
             frame_reservas,
-            font=("Consolas", 11),
+            font=("Consolas", 10),
             height=12,
             relief="solid",
         )
@@ -830,13 +839,28 @@ class SistemaGUI:
         # Le indico a Python como centar la ventana. (JHAR)
         ventana.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
     
+    # Actualización: Se crea lógica de validaciones
+    # para evitar registrar clientes ya registrados. (JHAR)
     def registrar_cliente(self):
         try:
-            cliente = Cliente(self.id_entry.get(), self.nombre_entry.get())
+            # Se crean variables para los datos ingresados
+            # para ser validados. (JHAR)
+            id_ingresada = self.id_entry.get().strip()
+            nombre_ingresado = self.nombre_entry.get().strip()
+            
+            # Validación de que el cliente a registrar no exista
+            # en la lista de clientes, para evitar duplicados. (JHAR)
+            for c in self.clientes:
+                if c.obtener_identificacion() == id_ingresada: 
+                    raise ValueError(f"El cliente con la ID {id_ingresada} ya está registrado en el sistema.")
+            
+            cliente = Cliente(id_ingresada, nombre_ingresado)
             self.clientes.append(cliente)
 
             # ===== CAMBIO INTERFAZ (EGC) =====
-            self.combo_clientes["values"] = [c.get_nombre() for c in self.clientes]
+            # Actualización: para la validación en base a la ID
+            # del cliente. (JHAR)
+            self.combo_clientes["values"] = [f"{c.obtener_identificacion()} - {c.get_nombre()}" for c in self.clientes]
             messagebox.showinfo("OK", "Cliente registrado")
 
         except Exception as e:
@@ -850,12 +874,21 @@ class SistemaGUI:
         self.id_entry.delete(0, tk.END)
         self.nombre_entry.delete(0, tk.END)
 
+    # Actualización: el método es actualizado
+    # para obtener correctamente el cliente en
+    # base a su ID y no bajo su nombre. (JHAR)
     def obtener_cliente(self):
-        nombre = self.cliente_var.get()
+        seleccion_cliente = self.cliente_var.get()
+        if not seleccion_cliente:
+            raise ValueError("Debe seleccionar un cliente.")
+        
+        id_buscado = seleccion_cliente.split(" - ")[0]
+        
         for c in self.clientes:
-            if c.get_nombre() == nombre:
+            if c.obtener_identificacion() == id_buscado:
                 return c
-        raise ValueError("Debe seleccionar un cliente")
+        # En caso de no encontar al cliente muestra un mensaje de error. (JHAR)
+        raise ValueError("No se pudo identificar al cliente en la lista.")
  
     def crear_reserva(self):
         # Conexión con requerimiento R9 (YTVCH)
@@ -904,10 +937,11 @@ class SistemaGUI:
             # Se almacena la reserva creada dentro de la lista general de reservas del sistema. (JFM - EGC)
             self.reservas.append(reserva)
 
-            # Se inserta en pantalla el resumen de la reserva creada dentro del listado de reservas contratadas. 
-            # (JFM) 
+            # Se inserta en pantalla el resumen de la reserva creada dentro del listado 
+            # de reservas contratadas. Actualización: se incluye el ID del cliente. 
+            # (JFM - JHAR) 
             self.lista.insert(tk.END,
-                f"{cliente.get_nombre()} - {servicio.nombre} - ${reserva.costo} - {reserva.estado}"
+                f"{cliente.obtener_identificacion()} | {cliente.get_nombre()} - {servicio.nombre} - ${reserva.costo} - {reserva.estado}"
             )
 
             messagebox.showinfo("OK", "Reserva creada")
@@ -973,7 +1007,7 @@ class SistemaGUI:
             r = self.reservas[i]
 
             self.lista.insert(i,
-                f"{r.cliente.get_nombre()} - {r.servicio.nombre} - ${r.costo} - {r.estado}"
+                f"{r.cliente.get_identificacion()} | {r.cliente.get_nombre()} - {r.servicio.nombre} - ${r.costo} - {r.estado}"
             )
 
         except Exception as e:
