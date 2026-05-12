@@ -13,7 +13,6 @@ print("Sistema Integral de Gestión de Clientes, Servicios y Reservas")
 # Se importa datetime para trabajar con fechas y horas, especialmente para registrar eventos y errores en los logs.
 # Se importa tkinter para crear la interfaz gráfica del sistema.
 # Se importa messagebox para mostrar mensajes emergentes de advertencia, error o confirmación al usuario.
-# Importación para estilos personalizados y componentes mejorados.
 # Se importa os para posibles operaciones relacionadas con archivos y rutas del sistema.
 
 from abc import ABC, abstractmethod
@@ -164,8 +163,17 @@ class Cliente:
 # ============================================
 
 class Reserva:
+    
+    # Se recupera el identificador único
+    # para cada reserva. (JFM - JHAR)
+    _contador = 0
+    
     def __init__(self, cliente, servicio, inicio, fin):
         try:
+            
+            # Asigna un número a cada reserva. (JFM - JHAR)
+            Reserva._contador += 1
+            self.id = Reserva._contador
             self.cliente = cliente
             self.servicio = servicio
 
@@ -178,16 +186,27 @@ class Reserva:
                 raise ValueError("La fecha final debe ser mayor a la inicial")
 
             self.estado = "Activa"
-            self.costo = self.calcular()
+            self.costo = self.calcular_dias()
 
             Logger.registrar(f"Reserva creada para {cliente.get_nombre()}")
 
         except Exception as e:
             Logger.registrar(f"Error en reserva: {e}")
             raise
-
-    def calcular(self):
-        dias = (self.fin - self.inicio).days
+    
+    # Actualización: anteriormente método 'calcular'
+    # ahora 'calcular_dias'. (JHAR)
+    def calcular_dias(self):
+        # Actualización: Cálculo correcto de días (JFM)
+        dias = (self.fin - self.inicio).days + 1
+        # Se almacena el valor de los días
+        # en una variable de la clase para no perderlo.
+        # Con esto se evita redundancia de cálculo
+        # que anteriormente se presentaba al repetir
+        # la fórmula (self.fin - self.inicio).days + 1
+        # en duracion_dias, en el método ver_reserva de la
+        # clase SistemaGUI. (JHAR)
+        self.dias = dias
         return self.servicio.calcular_costo(dias)
 
     def cancelar(self):
@@ -213,13 +232,11 @@ class SistemaGUI:
 
         # ===== CONFIGURACIÓN DE VENTANA (JHAR - EGC) =====
 
-        # Se define el tamaño inicial de la ventana, permitiendo posteriormente maximizarla
-        # para mejorar la distribución visual de todos los componentes del sistema. (JHAR)
-        # ===== CAMBIO INTERFAZ (EGC) =====
-        # Permite redimensionar la ventana.
-        self.root.geometry("1100x760")
-        self.root.state("zoomed")
+        # Aporto funcionalidad al requerimiento R3, para mejorar la
+        # la visualización de la ventana del programa. (JHAR)
+        self.centrar_ventana(self.root, 1100, 710)
         self.root.configure(bg="#F4F6F9")
+        # Permite redimensionar la ventana.
         self.root.resizable(True, True)
 
         # Aporto funcionalidad al requerimiento R3, para mejorar la visualización de la ventana del programa. (JHAR)
@@ -288,7 +305,7 @@ class SistemaGUI:
         # Se crea el contenedor principal encargado de almacenar y organizar visualmente todas
         # las secciones de la interfaz gráfica. (EGC)
         contenedor = tk.Frame(self.root, bg=self.color_fondo)
-        contenedor.pack(fill="both", expand=True, padx=15, pady=2)
+        contenedor.pack(side=tk.TOP, fill="both", expand=True, padx=10, pady=5)
 
           # ============================================
         # TITULO PRINCIPAL
@@ -583,6 +600,12 @@ class SistemaGUI:
             command=self.limpiar
         ).pack(side="left", padx=5)
 
+        # Actualización: Las entradas de servicios y de fechas deben
+        # permanecer deshabilitadas hasta que sea
+        # seleccionado un cliente. (JHAR)
+        self.combo_servicios.config(state="disabled")
+        self.inicio_entry.config(state="disabled")
+        self.fin_entry.config(state="disabled")
 
         # ============================================
         # AREA CENTRAL
@@ -594,37 +617,135 @@ class SistemaGUI:
             bg=self.color_fondo
         )
 
+        # Actualización para distribuir elementos equitativamente
+        # en pantalla. (JHAR)
+        frame_central.columnconfigure(0, weight=1, uniform="columna_igual")
+        frame_central.columnconfigure(1, weight=0)
+        frame_central.columnconfigure(2, weight=1, uniform="columna_igual")
+        
         frame_central.pack(
             fill="both",
-            expand=True,
+            #expand=True,
             pady=5
         )
 
+        # ===================================================
+    	# REQUERIMIENTO R6
+        # Se crea la sección según las necesidades del programa según las necesidades actuales. 
+        # (JHAR)
+    	# ============================================
+
+        # ===== REORGANIZACIÓN VISUAL (EGC) =====
+        # Contenedor visual que agrupa la lista de reservas creadas dentro del sistema. (JHAR)
+        frame_reservas = ttk.LabelFrame(
+            frame_central,
+            text="Reservas Contratadas",
+            style="Seccion.TLabelframe"
+        )
+
+        # Actualización del posicionamiento de reservas. (JHAR)
+        frame_reservas.grid(
+            row=0,
+            column=0,
+            sticky='nsew',
+            padx=5
+        )
+
+        # -------- LISTA DE RESERVAS y CONTROLES (JFM - JHAR) --------
+        self.lista = tk.Listbox(
+            frame_reservas,
+            font=("Consolas", 11),
+            height=12,
+            relief="solid",
+        )
+
+        self.lista.pack(
+            side="left",
+            fill="both",
+            expand=True,
+            padx=(5,0),
+            pady=5
+        )
+
+        scrollbar = ttk.Scrollbar(
+            frame_reservas,
+            orient="vertical",
+            command=self.lista.yview
+        )
+
+        scrollbar.pack(
+            side="right",
+            fill="y",
+            pady=5,
+            padx=(0,5)
+        )
+        
+        self.lista.config(
+            yscrollcommand=scrollbar.set
+        )
+
         # ============================================
-        # VISTA PREVIA
+        # BOTONES
+        # -------- BOTONES (JFM) --------
+        # ===== REORGANIZACIÓN VISUAL (EGC - JHAR) =====
+        # ============================================
+
+        # Se crean los botones encargados de visualizar y cancelar reservas. (JHAR - EGC)
+        frame_botones = tk.Frame(
+            frame_central,
+            bg=self.color_fondo
+        )
+
+        # Actualización de posicionamiento del marco de los botones. (EGC - JHAR)
+        frame_botones.grid(
+            row=0,
+            column=1,
+            sticky='ns',
+            padx=10,
+            pady=12
+        )
+
+        # Actualización de pady para que mantenga las proporciones
+        # de los demás elementos. (JHAR)
+        ttk.Button(
+            frame_botones,
+            text="Ver Reserva",
+            command=self.ver_reserva
+        ).pack(fill="x", pady=5)
+
+        # Se actualiza donde se muestra el botón cancelar reserva. (JFM - JHAR)
+        ttk.Button(
+            frame_botones,
+            text="Cancelar Reserva",
+            command=self.cancelar_reserva
+        ).pack(fill="x", pady=5)
+
+        # ============================================
+        # VISTA DETALLE DE RESERVA
         # -------- SECCIÓN 5: VISTA PREVIA --------
         # ===== REORGANIZACIÓN VISUAL (EGC) =====
         # ============================================
 
         # Se crea el área de vista previa donde se muestra la información detallada
-        # de la reserva seleccionada. (JFM - EGC)
-        frame_preview = ttk.LabelFrame(
+        # de la reserva seleccionada. (JFM - EGC - JHAR)
+        frame_detalle = ttk.LabelFrame(
             frame_central,
-            text="Vista Previa",
+            text="Detalle de reserva",
             style="Seccion.TLabelframe"
         )
 
-        frame_preview.pack(
-            side="left",
-            fill="both",
-            expand=True,
-            padx=(0, 2),
-            pady=(0, 2)
+        # Actualización: para mantener las proporciones
+        # de los demás elementos. (EGC - JHAR)
+        frame_detalle.grid(
+            row=0,
+            column=2,
+            sticky='nsew',
+            padx=5
         )
 
         self.preview = tk.Text(
-            frame_preview,
-            height=4,
+            frame_detalle,
+            height=12,
             font=("Consolas", 11),
             relief="solid",
             borderwidth=1
@@ -636,117 +757,7 @@ class SistemaGUI:
             padx=5,
             pady=5
         )
-
-        # ============================================
-        # BOTONES
-        # -------- BOTONES (JFM) --------
-        # ===== REORGANIZACIÓN VISUAL (EGC) =====
-        # ============================================
-
-        # Se crean los botones encargados de visualizar y cancelar reservas. (JHAR - EGC)
-        frame_botones = ttk.LabelFrame(
-            frame_central,
-            text="Acciones",
-            style="Seccion.TLabelframe"
-        )
-
-        frame_botones.pack(
-            side="right",
-            fill="y"
-        )
-
-        ttk.Button(
-            frame_botones,
-            text="Ver Reserva",
-            command=self.ver_reserva
-        ).pack(fill="x", padx=8, pady=1)
-
-        # Se actualiza donde se muestra el botón cancelar reserva. (JFM - JHAR)
-        ttk.Button(
-            frame_botones,
-            text="Cancelar Reserva",
-            command=self.cancelar_reserva
-        ).pack(fill="x", padx=8, pady=1)
-
-	    # ===================================================
-    	# REQUERIMIENTO R6
-        # Se crea la sección según las necesidades del programa según las necesidades actuales. 
-        # (JHAR)
-    	# ============================================
-
-        # ===== REORGANIZACIÓN VISUAL (EGC) =====
-        # Contenedor visual que agrupa la lista de reservas creadas dentro del sistema. (JHAR)
-        frame_reservas = ttk.LabelFrame(
-            contenedor,
-            text="Reservas Contratadas",
-            style="Seccion.TLabelframe"
-        )
-
-        frame_reservas.pack(
-            fill="both",
-            expand=True,
-            pady=(10)
-        )
-
-        # -------- LISTA DE RESERVAS y CONTROLES (JFM-JHAR) --------
-        self.lista = tk.Listbox(
-            frame_reservas,
-            font=("Consolas", 11),
-            height=4,
-            relief="solid",
-            borderwidth=1
-        )
-
-        self.lista.pack(
-            side="left",
-            fill="both",
-            expand=True,
-            padx=10,
-            pady=5
-        )
-
-        scrollbar = ttk.Scrollbar(
-            frame_reservas,
-            orient="vertical",
-            command=self.lista.yview
-        )
-
-        self.lista.config(
-            yscrollcommand=scrollbar.set
-        )
-
-        scrollbar.pack(
-            side="right",
-            fill="y",
-            pady=5
-        )
-
-        # ============================================
-        # BOTÓN SALIR
-        # ===== PERSONALIZACIÓN VISUAL (EGC) =====
-        # ============================================
-
-        # Botón encargado de cerrar el sistema
-        # y finalizar la ejecución del programa. (EGC)
-
-        '''boton_salir = tk.Button(
-            contenedor,
-            text="Salir",
-            command=self.salir,
-            bg="#C1121F",
-            fg="white",
-            font=("Tahoma", 8, "bold"),
-            relief="flat",
-            padx=12,
-            pady=3
-        )
-
-        boton_salir.pack(
-            anchor="e",
-            pady=2,
-            padx=5
-        )'''
-
+        
         # ============================================
         # BOTONES INFERIORES
         # ===== PERSONALIZACIÓN VISUAL (EGC) =====
@@ -761,8 +772,11 @@ class SistemaGUI:
         )
 
         frame_inferior.pack(
+            side=tk.TOP,
             fill="x",
-            pady=5
+            padx=10,
+            pady=10,
+            anchor='e'
         )
 
         boton_salir = tk.Button(
@@ -801,6 +815,21 @@ class SistemaGUI:
     # =========================
     # FUNCIONES
     # =========================
+    # ------- Funcionalidad para centrar la ventana (JHAR) -------
+    
+    def centrar_ventana(self, ventana, ancho, alto):
+        
+        # Variables para obtener el ancho y el alto de la pantalla. (JHAR)
+        ancho_dispositivo = ventana.winfo_screenwidth()
+        alto_dispositivo = ventana.winfo_screenheight()
+        
+        # Calculos para centrar la ventana. (JHAR)
+        posicion_x = round((ancho_dispositivo - ancho) / 2)
+        posicion_y = round((alto_dispositivo - alto) / 2)
+        
+        # Le indico a Python como centar la ventana. (JHAR)
+        ventana.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
+    
     def registrar_cliente(self):
         try:
             cliente = Cliente(self.id_entry.get(), self.nombre_entry.get())
@@ -813,6 +842,13 @@ class SistemaGUI:
         except Exception as e:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
+        
+        # Actualización: se trasladan estas líneas del
+        # método limpiar, ya que es más fácil realizar
+        # limpieza de los datos de un nuevo cliente al
+        # momento de registrarlo. (JHAR) 
+        self.id_entry.delete(0, tk.END)
+        self.nombre_entry.delete(0, tk.END)
 
     def obtener_cliente(self):
         nombre = self.cliente_var.get()
@@ -824,7 +860,7 @@ class SistemaGUI:
     def crear_reserva(self):
         # Conexión con requerimiento R9 (YTVCH)
         if not self.verificar_seleccion_servicio():
-         return
+            return
             
         try:
             cliente = self.obtener_cliente()
@@ -866,30 +902,41 @@ class SistemaGUI:
     
     # Función para ver detalle completo de la reserva. (JHAR - JJBT)
     def ver_reserva(self):
-       self.preview.delete("1.0", tk.END)
-       seleccion = self.lista.curselection()
-       if not seleccion:
-                raise ValueError("Seleccione una reserva")
+        self.preview.delete("1.0", tk.END)
+        seleccion = self.lista.curselection()
+        
+        # Busca por índice seleccionado en la lista — así siempre coincide. (JJBT)
+        # ===================================================
+    	# REQUERIMIENTO R11
+        # Mensaje de error al no selecciar una reserva para
+        # # visualizar el detalle. 
+        # (JHAR)
+    	# ============================================
+        if not seleccion:
+            mensaje_seleccion = "No se ha seleccionado una reserva de la lista."
+            Logger.registrar(f"ERROR: {mensaje_seleccion}")
+            messagebox.showerror("Error de Selección", mensaje_seleccion)
+            return
 
-       i = seleccion[0]
-       descuento=self.obtener_descuento()
-       reserva_encontrada=self.reservas[i]
-       costo_original = reserva_encontrada.costo
-       costo_con_descuento = costo_original * (1 - descuento / 100)
-       duracion_dias = (reserva_encontrada.fin - reserva_encontrada.inicio).days
-       # Se usa textwrap para mejorar la presentación y con esto se corrige la identación. (JHAR)
-       texto = textwrap.dedent(f"""
+        i = seleccion[0]
+        descuento=self.obtener_descuento()
+        reserva_encontrada=self.reservas[i]
+        # Son eliminadas varias líneas de cáclculos redundantes
+        # que ya se hacían en la clase reserva, como costo, costo
+        # con descuento y el cálculo de días. (JHAR)
+        # Se usa textwrap para mejorar la presentación y con esto se corrige la identación. (JHAR)
+        texto = textwrap.dedent(f"""
+                ID Reserva: #{reserva_encontrada.id}
                 Cliente: {self.cliente_var.get()}
                 Servicio: {self.servicio_var.get()}
                 Inicio: {self.inicio_entry.get()}
                 Fin: {self.fin_entry.get()}
                 Descuento: {self.obtener_descuento()}%
-                Duración:            {duracion_dias} día(s)
-                Costo original:      ${costo_original:.2f}
-                Costo con descuento: ${costo_con_descuento:.2f}
-                Estado:              {reserva_encontrada.estado}
+                Duración: {reserva_encontrada.dias} día(s)
+                Costo: ${reserva_encontrada.costo:.2f}
+                Estado: {reserva_encontrada.estado}
                 """)
-       self.preview.insert(tk.END, texto)
+        self.preview.insert(tk.END, texto)
     
     def cancelar_reserva(self):
         try:
@@ -911,24 +958,6 @@ class SistemaGUI:
             Logger.registrar(str(e))
             messagebox.showerror("Error", str(e))
 
-    # EGC
-    #la validación realmente la está haciendo la clase Reserva. 	
-    '''def validar_fechas(self):
-        try:
-            # Construimos fechas reales
-            inicio = datetime.date(2025, int(self.inicio_entry.get()))
-            fin = datetime.date(2025, int(self.fin_entry.get()))
-
-            # Validación lógica
-            if fin <= inicio:
-                raise ValueError("La fecha final debe ser mayor a la inicial")
-
-            return inicio, fin
-
-        except Exception as e:
-            # Encadenamiento de error
-            raise ValueError("Error en fechas: " + str(e))'''
-
     # ============================================
     # FUNCIÓN LIMPIAR
     # ============================================
@@ -936,12 +965,13 @@ class SistemaGUI:
     # Función encargada de limpiar todos los campos del formulario y reiniciar la interfaz gráfica. 
     # (JFM - EGC)
     def limpiar(self):
-
-        self.id_entry.delete(0, tk.END)
-        self.nombre_entry.delete(0, tk.END)
-        self.servicio_var.set("")
         self.inicio_entry.delete(0, tk.END)
         self.fin_entry.delete(0, tk.END)
+        # Recuperación: de la línea que regresa al valor
+        # por defecto de self.cliente_var, borrada en una
+        # actualziación. (JHAR)
+        self.cliente_var.set("")
+        self.servicio_var.set("")
         self.descuento_var.set(0) # Reinicia descuento seleccionado. (EGC)
         self.preview.delete("1.0", tk.END)
 
@@ -979,8 +1009,9 @@ class SistemaGUI:
         try:
             seleccion = self.servicio_var.get()
             # Se conecta con self.servicios para validar la opción elegida (YTVCH)
-            if seleccion == "Escoge un servicio" or seleccion == "" or self.servicios[seleccion] is None:
-                raise ServicioNoSeleccionadoError("Debe seleccionar un servicio de la lista")
+            # Actualización: se corrige la validación del servicio seleccionado. (JHAR)
+            if seleccion == "" or seleccion not in self.servicios:
+                raise ServicioNoSeleccionadoError("Debe seleccionar un servicio válido de la lista")
             return True 
 
         except ServicioNoSeleccionadoError as e:
